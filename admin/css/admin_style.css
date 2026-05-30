@@ -1,0 +1,371 @@
+/* admin/css/admin_style.css */
+
+:root {
+    --wp-admin-bg: #f0f3f5;
+    --wp-menu-bg: #1d2327;
+    --wp-menu-hover: #101416;
+    --wp-menu-active: #2271b1;
+    --wp-text-main: #3c434a;
+    --wp-text-light: #fff;
+    --wp-border: #c3c4c7;
+    --wp-accent: #2271b1;
+    --wp-accent-hover: #135e96;
+    --wp-danger: #b32d2e;
+    --wp-danger-hover: #dc3232;
+    --wp-notice-success: #46b450;
+    --wp-notice-warning: #dba617;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    background: var(--wp-admin-bg);
+    color: var(--wp-text-main);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ==========================================================================
+   Admin レイアウト（ヘッダー・サイドバー・フッター共通構造）
+   ========================================================================== */
+.wp-admin-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.wp-admin-header-bar {
+    width: 100%;
+    background: #101416;
+    color: var(--wp-text-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    height: 50px;
+    border-bottom: 1px solid #2c3338;
+    z-index: 10000;
+}
+
+.brand-area {
+    display: flex;
+    align-items: center;
+}
+
+.admin-logo {
+    height: 30px;
+    width: auto;
+    display: block;
+}
+
+.wp-admin-header-bar .brand-title {
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    margin-left: 10px;
+}
+
+.wp-admin-header-bar .user-info {
+    font-size: 13px;
+    color: #c3c4c7;
+}
+
+.wp-admin-body-container {
+    display: flex;
+    flex: 1;
+    width: 100%;
+}
+
+.wp-sidebar {
+    width: 160px;
+    min-width: 160px;
+    background: var(--wp-menu-bg);
+    color: var(--wp-text-light);
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+}
+
+.wp-sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wp-sidebar-menu li {
+    position: relative;
+}
+
+.wp-sidebar-menu li a {
+    display: block;
+    padding: 12px 15px;
+    color: #c3c4c7;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.1s ease-in-out;
+    border-left: 4px solid transparent;
+}
+
+.wp-sidebar-menu li a:hover {
+    background: var(--wp-menu-hover);
+    color: #00a0d2;
+}
+
+.wp-sidebar-menu li a.active {
+    background: var(--wp-menu-active);
+    color: var(--wp-text-light);
+    border-left-color: #72aee6;
+}
+
+.wp-sidebar-submenu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    background: #2c3338;
+}
+
+.wp-sidebar-submenu li a {
+    padding: 8px 15px 8px 25px;
+    font-size: 13px;
+    color: #c3c4c7;
+    border-left: none;
+}
+
+.wp-sidebar-submenu li a:hover {
+    background: #1d2327;
+    color: #00a0d2;
+}
+
+.wp-sidebar-submenu li a.active {
+    color: #fff;
+    font-weight: 600;
+    background: transparent;
+}
+
+.wp-sidebar-menu .menu-separator {
+    height: 1px;
+    background: #2c3338;
+    margin: 10px 0;
+}
+
+.wp-main-content {
+    flex: 1;
+    padding: 20px 30px 40px 30px;
+    background: var(--wp-admin-bg);
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.wp-content-title-area {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.wp-content-title-area h2 {
+    font-size: 23px;
+    font-weight: 400;
+    color: #1d2327;
+}
+
+/* ダッシュボード用ウィジェットグリッド */
+.dashboard-widgets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* ダッシュボードカード共通スタイル */
+.settings-card {
+    background: #fff;
+    border: 1px solid var(--wp-border);
+    padding: 20px;
+    border-radius: 4px;
+}
+
+.settings-card h3 {
+    font-size: 16px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.settings-card ul {
+    list-style: none;
+    padding: 0;
+    font-size: 14px;
+    line-height: 2;
+}
+
+.welcome-panel {
+    background: #fff;
+    border: 1px solid var(--wp-border);
+    padding: 23px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.welcome-panel h3 {
+    font-size: 21px;
+    font-weight: 400;
+    margin-bottom: 10px;
+}
+
+.wp-admin-footer {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #dcdcde;
+    font-size: 12px;
+    color: #646970;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* ==========================================================================
+   共通UIコンポーネント（ボタン・テーブル・バッジ等）
+   ========================================================================== */
+input[type="text"],
+input[type="password"],
+select,
+textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--wp-border);
+    border-radius: 4px;
+    background: #fff;
+    font-size: 13px;
+    color: var(--wp-text-main);
+    font-family: inherit;
+    transition: border-color 0.1s ease-in-out;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--wp-accent);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--wp-accent);
+}
+
+.button {
+    display: inline-block;
+    text-decoration: none;
+    padding: 6px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    border-radius: 3px;
+    border: 1px solid;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.1s ease-in-out;
+    text-align: center;
+}
+
+.button-primary {
+    background: var(--wp-accent);
+    border-color: var(--wp-accent);
+    color: #fff;
+}
+
+.button-primary:hover {
+    background: var(--wp-accent-hover);
+    border-color: var(--wp-accent-hover);
+}
+
+.button-secondary {
+    background: #f6f7f7;
+    border-color: #3c434a;
+    color: #3c434a;
+}
+
+.button-secondary:hover {
+    background: #f0f0f1;
+    border-color: #1d2327;
+    color: #1d2327;
+}
+
+.button-link-delete {
+    background: none;
+    border: none;
+    color: var(--wp-danger);
+    cursor: pointer;
+    text-decoration: underline;
+    font-size: 13px;
+    padding: 0;
+    font-family: inherit;
+}
+
+.button-link-delete:hover {
+    color: var(--wp-danger-hover);
+}
+
+.wp-list-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.05);
+    border: 1px solid var(--wp-border);
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+.wp-list-table th,
+.wp-list-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f1;
+    vertical-align: middle;
+}
+
+.wp-list-table th {
+    background: #fafafa;
+    font-weight: 600;
+    color: #1d2327;
+    border-bottom: 2px solid #dcdcde;
+}
+
+.wp-list-table tbody tr:hover {
+    background: #f6f7f7;
+}
+
+code {
+    padding: 2px 6px;
+    background: #eaeaea;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #c9382b;
+}
+
+.wp-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 3px;
+    text-align: center;
+}
+
+.badge-public {
+    background: #ecf7ed;
+    color: #2e7d32;
+    border: 1px solid #c8e6c9;
+}
+
+.badge-draft {
+    background: #fff8e1;
+    color: #b78103;
+    border: 1px solid #ffe082;
+}
