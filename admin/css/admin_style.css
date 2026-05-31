@@ -369,3 +369,62 @@ code {
     color: #b78103;
     border: 1px solid #ffe082;
 }
+
+/* --- テーマ管理専用レイアウト --- */
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding-top: 10px;
+}
+
+.theme-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    position: relative;
+    transition: box-shadow 0.1s;
+    display: flex;
+    flex-direction: column;
+}
+
+.theme-card.is-active {
+    border: 2px solid #2271b1;
+}
+
+.theme-screenshot {
+    position: relative;
+    height: 180px;
+    background: #f6f7f7;
+    overflow: hidden;
+}
+
+.theme-screenshot img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ホバー時に表示する詳細ボタン */
+.theme-actions {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.theme-card:hover .theme-actions { display: flex; }
+
+/* モーダル表示用 */
+.theme-modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 99999;
+    background: rgba(0,0,0,0.6); align-items: center; justify-content: center;
+}
+.theme-modal {
+    background: #fff; width: 800px; max-width: 90%;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    display: flex; flex-direction: column;
+}
+.modal-header { padding: 15px 20px; border-bottom: 1px solid #dcdcde; font-size: 16px; font-weight: 600; }
+.modal-body { display: flex; padding: 20px; gap: 20px; }
+.modal-info { flex: 1; }
+.modal-footer { 
+    padding: 15px 20px; border-top: 1px solid #dcdcde; background: #f6f7f7; 
+    display: flex; justify-content: space-between; align-items: center; 
+}

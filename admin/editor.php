@@ -48,13 +48,13 @@ if ($id) {
     $index_data = json_decode(file_get_contents(INDEX_FILE), true) ?? [];
     foreach ($index_data as $post) {
         if ($post['id'] === $id) {
-            $title      = $post['title'];
-            $slug       = $post['slug'];
-            $status     = $post['status'];
-            $date       = $post['date'];
+            $title       = $post['title'];
+            $slug        = $post['slug'];
+            $status      = $post['status'];
+            $date        = $post['date'];
             $category_id = $post['category_id'] ?? '';
-            $thumbnail  = $post['thumbnail'] ?? '';
-            $full_path  = __DIR__ . '/../' . $post['file_path'];
+            $thumbnail   = $post['thumbnail'] ?? '';
+            $full_path   = __DIR__ . '/../' . $post['file_path'];
             if (file_exists($full_path)) {
                 $content = file_get_contents($full_path);
             }
@@ -116,14 +116,12 @@ require_once __DIR__ . '/includes/sidebar.php';
                 </div>
             </div>
 
-            <!-- アイキャッチ画像ボックス -->
             <div class="postbox">
                 <div class="postbox-title">アイキャッチ画像</div>
                 <div class="postbox-inside">
                     <input type="hidden" name="thumbnail" id="thumbnail-input" value="<?php echo htmlspecialchars($thumbnail, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="file" name="thumb_file" id="thumb_file" style="display:none;" accept="image/*">
 
-                    <!-- プレビューエリア -->
                     <div id="thumb-preview" class="thumb-preview-area <?php echo $thumbnail ? 'has-image' : ''; ?>">
                         <?php if ($thumbnail): ?>
                             <img src="../<?php echo htmlspecialchars($thumbnail, ENT_QUOTES, 'UTF-8'); ?>" alt="アイキャッチ画像">
@@ -136,7 +134,6 @@ require_once __DIR__ . '/includes/sidebar.php';
                         <?php endif; ?>
                     </div>
 
-                    <!-- ボタン群 -->
                     <div class="thumb-btn-group">
                         <button type="button" class="button button-secondary thumb-select-btn" onclick="openMediaModal()">
                             <?php echo $thumbnail ? '画像を変更' : 'アイキャッチ画像を設定'; ?>
@@ -157,13 +154,9 @@ require_once __DIR__ . '/includes/sidebar.php';
     </div>
 </form>
 
-<!-- ============================================================
-     メディア選択モーダル
-     ============================================================ -->
 <div id="media-modal-overlay" class="media-modal-overlay" onclick="closeMediaModalOnOverlay(event)">
     <div class="media-modal">
 
-        <!-- ヘッダー -->
         <div class="media-modal-header">
             <div class="media-modal-tabs">
                 <button type="button" class="media-tab active" data-tab="upload" onclick="switchTab('upload')">ファイルをアップロード</button>
@@ -172,7 +165,6 @@ require_once __DIR__ . '/includes/sidebar.php';
             <button type="button" class="media-modal-close" onclick="closeMediaModal()">&times;</button>
         </div>
 
-        <!-- アップロードタブ -->
         <div id="tab-upload" class="media-tab-content active">
             <div id="upload-dropzone" class="upload-dropzone">
                 <div class="dropzone-inner">
@@ -190,7 +182,6 @@ require_once __DIR__ . '/includes/sidebar.php';
             <input type="file" id="modal-file-input" accept="image/*" multiple style="display:none;">
         </div>
 
-        <!-- ライブラリタブ -->
         <div id="tab-library" class="media-tab-content">
             <div class="library-toolbar">
                 <input type="text" id="library-search" class="library-search-input" placeholder="ファイル名で検索..." oninput="filterLibrary(this.value)">
@@ -217,7 +208,6 @@ require_once __DIR__ . '/includes/sidebar.php';
             </div>
         </div>
 
-        <!-- フッター -->
         <div class="media-modal-footer">
             <div id="selected-info" class="selected-info"></div>
             <div class="media-modal-footer-btns">
@@ -349,7 +339,7 @@ async function uploadAndApply(file) {
     const dropzone  = document.getElementById('upload-dropzone');
     const uploading = document.getElementById('dropzone-uploading');
     const inner     = dropzone.querySelector('.dropzone-inner');
-    inner.style.display     = 'none';
+    inner.style.display       = 'none';
     uploading.style.display = 'flex';
 
     const formData = new FormData();
@@ -379,7 +369,7 @@ async function uploadAndApply(file) {
         assignFileToHiddenInput(file);
     }
 
-    inner.style.display     = '';
+    inner.style.display       = '';
     uploading.style.display = 'none';
     closeMediaModal();
 }
@@ -484,7 +474,11 @@ document.getElementById('editorForm').addEventListener('submit', function(e) {
     fetch('api.php', { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => {
-            if (data.success) { alert('保存しました'); window.location.href = 'index.php'; }
+            if (data.success) { 
+                alert('保存しました'); 
+                // 修正箇所：一覧ページへリダイレクト
+                window.location.href = 'edit-posts.php'; 
+            }
             else { alert('エラー: ' + (data.error || '不明なエラー')); }
         });
 });

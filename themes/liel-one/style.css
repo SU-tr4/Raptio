@@ -1,0 +1,335 @@
+/*
+Theme Name: Liel One
+Theme URI: https://example.com/themes/liel-one
+Author: Sutr4
+Author URI: https://example.com/
+Description: A minimalist 1-column editorial blog theme designed for high readability and focused content delivery.
+Version: 2.0.0
+Requires at least: 6.0
+Tested up to: 6.5
+Requires PHP: 8.0
+License: GPLv2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: liel-one
+Domain Path: /languages
+Tags: blog, editorial, one-column, clean, typography, responsive-layout, accessibility-ready
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+    --ink: #1a1a18;
+    --ink-muted: #6b6b65;
+    --ink-faint: #b0afa8;
+    --paper: #faf9f6;
+    --paper-warm: #f2f0ea;
+    --accent: #c8a96e;
+    --accent-dark: #8a6f3e;
+    --border: rgba(26,26,24,0.1);
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: 'DM Sans', system-ui, sans-serif;
+    --max-w: min(1100px, 90vw);
+    --gap: clamp(2rem, 5vw, 4rem);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+    background-color: var(--paper);
+    font-family: var(--sans);
+    font-weight: 300;
+    line-height: 1.75;
+    color: var(--ink);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+.container {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 0 40px;
+}
+
+/* ─── HEADER ─────────────────────────────────────────── */
+
+header {
+    padding: clamp(2.5rem, 6vw, 5rem) 0 clamp(2rem, 5vw, 3.5rem);
+    text-align: center;
+    position: relative;
+}
+
+header::after {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 1px;
+    background: var(--accent);
+    margin: clamp(1.5rem, 4vw, 2.5rem) auto 0;
+}
+
+.site-logo img {
+    max-width: 120px;
+    height: auto;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+header h1 {
+    font-family: var(--serif);
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    margin: 0 0 0.4rem;
+    line-height: 1.2;
+}
+
+header h1 a {
+    text-decoration: none;
+    color: var(--ink);
+}
+
+header h1 a:hover {
+    color: var(--accent-dark);
+}
+
+header > p {
+    font-size: 0.82rem;
+    color: var(--ink-muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.main-menu {
+    margin-top: 1.8rem;
+}
+
+.main-menu ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.main-menu a {
+    text-decoration: none;
+    color: var(--ink-muted);
+    font-size: 0.78rem;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+}
+
+.main-menu a:hover {
+    color: var(--ink);
+}
+
+/* ─── MAIN / ARTICLES ────────────────────────────────── */
+
+main {
+    padding: clamp(1.5rem, 4vw, 3rem) 0 clamp(3rem, 8vw, 6rem);
+}
+
+article {
+    margin-bottom: clamp(3rem, 7vw, 5rem);
+    padding-bottom: clamp(3rem, 7vw, 5rem);
+    border-bottom: 1px solid var(--border);
+}
+
+article:last-child {
+    border-bottom: none;
+}
+
+.post-thumbnail {
+    margin-bottom: 1.8rem;
+    overflow: hidden;
+}
+
+.post-thumbnail img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 2px;
+    transition: transform 0.6s ease;
+}
+
+.post-thumbnail:hover img {
+    transform: scale(1.02);
+}
+
+article h2 {
+    font-family: var(--serif);
+    font-size: clamp(1.5rem, 4vw, 2.1rem);
+    font-weight: 400;
+    line-height: 1.25;
+    margin: 0 0 0.9rem;
+    letter-spacing: -0.01em;
+}
+
+article h2 a {
+    text-decoration: none;
+    color: var(--ink);
+    transition: color 0.2s;
+}
+
+article h2 a:hover {
+    color: var(--accent-dark);
+}
+
+article > p {
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+    line-height: 1.8;
+    margin: 0;
+}
+
+/* ─── SINGLE POST ────────────────────────────────────── */
+
+article h1 {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 6vw, 3.2rem);
+    font-weight: 300;
+    line-height: 1.2;
+    margin: 0 0 2rem;
+    letter-spacing: -0.02em;
+}
+
+.content {
+    font-size: 1.02rem;
+    line-height: 1.85;
+    color: var(--ink);
+    max-width: 680px;
+}
+
+.content p { margin: 0 0 1.4em; }
+
+.content h2 {
+    font-family: var(--serif);
+    font-size: 1.6rem;
+    font-weight: 400;
+    margin: 2.5em 0 0.6em;
+    letter-spacing: -0.01em;
+}
+
+.content h3 {
+    font-family: var(--serif);
+    font-size: 1.25rem;
+    font-weight: 400;
+    margin: 2em 0 0.5em;
+}
+
+.content a {
+    color: var(--accent-dark);
+    text-decoration: underline;
+    text-decoration-color: var(--accent);
+    text-underline-offset: 3px;
+}
+
+.content blockquote {
+    border-left: 2px solid var(--accent);
+    margin: 2em 0;
+    padding: 0.5em 0 0.5em 1.6em;
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-style: italic;
+    color: var(--ink-muted);
+}
+
+.content img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 2em 0;
+    border-radius: 2px;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--ink-muted);
+    margin-top: 3rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border);
+    transition: color 0.2s;
+}
+
+.back-link::before {
+    content: '←';
+    font-size: 1em;
+}
+
+.back-link:hover {
+    color: var(--ink);
+}
+
+/* ─── FOOTER / WIDGETS ───────────────────────────────── */
+
+.footer-widgets {
+    margin-top: 4rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border);
+}
+
+.widget-item {
+    margin-bottom: 2.5rem;
+}
+
+.widget-item h3 {
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 0 0 1rem;
+}
+
+.widget-content {
+    font-size: 0.92rem;
+    color: var(--ink-muted);
+}
+
+footer {
+    padding: 2.5rem 0 3.5rem;
+}
+
+footer p {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+    margin: 0;
+}
+
+/* ─── EMPTY STATE ────────────────────────────────────── */
+
+.empty-state {
+    text-align: center;
+    padding: 5rem 0;
+    color: var(--ink-faint);
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    font-style: italic;
+}
+
+/* ─── RESPONSIVE ─────────────────────────────────────── */
+
+@media (max-width: 600px) {
+    .container { padding: 0 20px; }
+    .main-menu ul { gap: 1.2rem; }
+    article h2 { font-size: 1.45rem; }
+}
