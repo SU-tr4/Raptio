@@ -28,8 +28,9 @@ class WidgetManager {
                 self::renderCategories($all_categories, $posts);
                 break;
             case 'search':
-                echo '<form action="index.php" method="GET" class="sidebar-search-form">
-                        <input type="text" name="s" placeholder="検索キーワード..." aria-label="検索">
+                // カテゴリーと独立させ、検索キーワードのみを送信する構成
+                echo '<form action="archive.php" method="GET" class="sidebar-search-form">
+                        <input type="text" name="s" value="' . htmlspecialchars($_GET['s'] ?? '', ENT_QUOTES, 'UTF-8') . '" placeholder="検索キーワード..." aria-label="検索">
                       </form>';
                 break;
             case 'html':
@@ -51,21 +52,12 @@ class WidgetManager {
                 $title = htmlspecialchars($p['title'], ENT_QUOTES, 'UTF-8');
                 $url = 'index.php?slug=' . htmlspecialchars($p['slug'], ENT_QUOTES, 'UTF-8');
                 $thumb = !empty($p['thumbnail']) ? $p['thumbnail'] : 'assets/no-image.png';
-
                 echo '<li><a href="'.$url.'" class="item-link">';
-                
                 if ($layout === 'thumb-small-side' || $layout === 'thumb-large-under' || $layout === 'thumb-large-hover') {
                     echo '<img src="'.$thumb.'" alt="">';
-                } elseif ($layout === 'thumb-only') {
-                    echo '<img src="'.$thumb.'" alt="'.$title.'">';
                 }
-
-                if ($layout !== 'thumb-only') {
-                    echo '<span class="title">'.$title.'</span>';
-                }
-                
+                if ($layout !== 'thumb-only') echo '<span class="title">'.$title.'</span>';
                 echo '</a></li>';
-
                 if (++$i >= $count) break;
             }
         }
@@ -79,7 +71,7 @@ class WidgetManager {
             foreach ($posts as $p) {
                 if (($p['status'] ?? '') === 'public' && ($p['category_id'] ?? '') === $cat['id']) $cnt++;
             }
-            echo '<li><a href="index.php?cat=' . htmlspecialchars($cat['id'], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') . ' ('.$cnt.')</a></li>';
+            echo '<li><a href="archive.php?cat=' . htmlspecialchars($cat['id'], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8') . ' ('.$cnt.')</a></li>';
         }
         echo '</ul>';
     }

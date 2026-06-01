@@ -23,13 +23,12 @@ include 'header.php';
     $cat_map = [];
     foreach ($all_categories as $cat) { $cat_map[$cat['id']] = $cat['name']; }
 
-    $filter_cat = $_GET['cat'] ?? '';
-    $filter_cat = preg_replace('/[^a-zA-Z0-9\-_]/', '', $filter_cat);
+    // index.phpではフィルタリングを行わず全件表示とするため、フィルター変数は空にします
+    $filter_cat = '';
 
     $public_posts = [];
     foreach ($posts as $post) {
         if (($post['status'] ?? '') !== 'public') continue;
-        if ($filter_cat && ($post['category_id'] ?? '') !== $filter_cat) continue;
         $public_posts[] = $post;
     }
     ?>
@@ -38,10 +37,10 @@ include 'header.php';
 
         <?php if (!empty($all_categories)): ?>
         <div class="category-filter-bar">
-            <a href="index.php" class="cat-filter-btn <?php echo !$filter_cat ? 'active' : ''; ?>">すべて</a>
+            <a href="index.php" class="cat-filter-btn active">すべて</a>
             <?php foreach ($all_categories as $cat): ?>
-                <a href="index.php?cat=<?php echo htmlspecialchars($cat['id'], ENT_QUOTES, 'UTF-8'); ?>"
-                   class="cat-filter-btn <?php echo $filter_cat === $cat['id'] ? 'active' : ''; ?>">
+                <a href="archive.php?cat=<?php echo htmlspecialchars($cat['id'], ENT_QUOTES, 'UTF-8'); ?>"
+                   class="cat-filter-btn">
                     <?php echo htmlspecialchars($cat['name'], ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             <?php endforeach; ?>
@@ -72,7 +71,7 @@ include 'header.php';
                                     <div class="post-card-meta">
                                         <span class="post-card-date"><?php echo htmlspecialchars(date('Y.m.d', strtotime($post['date'])), ENT_QUOTES, 'UTF-8'); ?></span>
                                         <?php if ($cat_name): ?>
-                                            <a href="index.php?cat=<?php echo htmlspecialchars($post['category_id'], ENT_QUOTES, 'UTF-8'); ?>" class="post-card-cat"><?php echo htmlspecialchars($cat_name, ENT_QUOTES, 'UTF-8'); ?></a>
+                                            <a href="archive.php?cat=<?php echo htmlspecialchars($post['category_id'], ENT_QUOTES, 'UTF-8'); ?>" class="post-card-cat"><?php echo htmlspecialchars($cat_name, ENT_QUOTES, 'UTF-8'); ?></a>
                                         <?php endif; ?>
                                     </div>
                                     <h2 class="post-card-title">
@@ -87,7 +86,7 @@ include 'header.php';
                         <?php endforeach; ?>
                     <?php else: ?>
                         <p class="posts-empty">
-                            <?php echo $filter_cat ? '該当するカテゴリーの記事はありません。' : '現在、公開されている記事はありません。'; ?>
+                            現在、公開されている記事はありません。
                         </p>
                     <?php endif; ?>
                 </div>
