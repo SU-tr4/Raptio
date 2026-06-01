@@ -127,7 +127,7 @@ foreach ($plugins_data as $folder_name => $data) {
     if ($status === 'inactive' && $is_active) continue;
     $filtered_plugins[$folder_name] = $data;
 }
-
+$current_page = 'plugins';
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
 ?>
