@@ -18,6 +18,7 @@ $positions = [
 
 $current_gid = $_GET['gid'] ?? (key($menus) ?: '');
 $current_group = $menus[$current_gid] ?? ['name' => '新規メニュー', 'items' => []];
+$current_page = 'menu';
 
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';

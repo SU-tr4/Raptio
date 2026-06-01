@@ -1,8 +1,10 @@
 <?php
 // admin/index.php
-require_once __DIR__ . '/auth.php';
+// 1. システム設定を読み込む（これが必須）
+require_once __DIR__ . '/config.php';
 
-// 未認証時のログインフォーム表示
+// 2. 認証チェック
+require_once __DIR__ . '/auth.php';
 if (!check_raptio_auth()) {
     require_once __DIR__ . '/login.php';
     exit;
@@ -19,6 +21,7 @@ $post_count = count($posts);
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
 ?>
+
 <div class="wp-content-title-area">
     <h2>ダッシュボード</h2>
 </div>
@@ -26,6 +29,10 @@ require_once __DIR__ . '/includes/sidebar.php';
 <div class="welcome-panel">
     <h3>Raptio へようこそ！</h3>
     <p style="color: #646970; font-size: 14px;">新しい記事の執筆やサイトのカスタマイズはこちらから始めてください。</p>
+</div>
+
+<div class="dashboard-widgets">
+    <?php RaptioHook::do('dashboard_widgets'); ?>
 </div>
 
 <div class="dashboard-widgets">
@@ -53,6 +60,7 @@ require_once __DIR__ . '/includes/sidebar.php';
         </form>
     </div>
 </div>
+
 <?php
 require_once __DIR__ . '/includes/footer.php';
 ?>

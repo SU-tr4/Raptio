@@ -41,15 +41,20 @@ function get_theme_metadata($theme_path) {
     return $meta;
 }
 
+// 設定ファイルの読み込み
 $config = json_decode(file_get_contents(CONFIG_FILE), true);
-$current_theme = $config['active_theme'] ?? 'lux';
 
 // テーマ変更処理
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['active_theme'])) {
     $config['active_theme'] = $_POST['active_theme'];
     file_put_contents(CONFIG_FILE, json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-    $message = 'テーマを更新しました。';
+    // リダイレクトして画面を更新する
+    header('Location: themes.php?status=updated');
+    exit;
 }
+
+$current_theme = $config['active_theme'] ?? 'lux';
+$current_page = 'themes';
 
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
@@ -57,8 +62,8 @@ require_once __DIR__ . '/includes/sidebar.php';
 
 <div class="wp-content-title-area"><h2>テーマ管理</h2></div>
 
-<?php if (isset($message)): ?>
-    <div style="padding: 10px; background: #e0f2f1; margin-bottom: 20px; border-left: 4px solid #008a74;"><?php echo htmlspecialchars($message); ?></div>
+<?php if (isset($_GET['status']) && $_GET['status'] === 'updated'): ?>
+    <div style="padding: 10px; background: #e0f2f1; margin-bottom: 20px; border-left: 4px solid #008a74;">テーマ設定を更新しました。</div>
 <?php endif; ?>
 
 <div class="theme-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
@@ -87,10 +92,10 @@ require_once __DIR__ . '/includes/sidebar.php';
             </style>
         </div>
 
-        <div id="modal-<?php echo $theme_name; ?>" class="theme-modal-overlay" onclick="this.style.display='none'">
+        <div id="modal-<?php echo $theme_name; ?>" class="theme-modal-overlay" onclick="this.style.display='none'" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
             <div class="theme-modal" onclick="event.stopPropagation()" style="background: #fff; width: 800px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 5px 15px rgba(0,0,0,0.3); overflow: hidden;">
                 <div class="modal-header" style="padding: 15px 20px; border-bottom: 1px solid #dcdcde; font-size: 16px; font-weight: 600;">詳細情報: <?php echo htmlspecialchars($meta['name']); ?></div>
-                <div class="modal-body" style="padding: 20px; overflow-y: auto; flex-grow: 1;">
+                <div class="modal-body" style="padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: row;">
                     <div style="width: 300px; flex-shrink: 0;">
                         <img src="<?php echo $img; ?>" style="width: 100%; border: 1px solid #ddd;">
                     </div>

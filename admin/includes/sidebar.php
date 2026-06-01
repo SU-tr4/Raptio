@@ -20,12 +20,13 @@ $sub_page = $sub_page ?? '';
         <li><a href="media.php" class="<?php echo $current_page === 'media' ? 'active' : ''; ?>">メディア</a></li>
         
         <li>
-            <a href="#" class="<?php echo $current_page === 'settings' ? 'active' : ''; ?>">サイトデザイン</a>
+            <a href="site-settings.php" class="<?php echo in_array($current_page, ['settings', 'themes', 'plugins', 'menu', 'sidebar']) ? 'active' : ''; ?>">サイトデザイン</a>
             <ul class="wp-sidebar-submenu">
-                <li><a href="site-settings.php">基本設定</a></li>
-                <li><a href="themes.php">テーマ管理</a></li>
-                <li><a href="site-menu.php">メニュー管理</a></li>
-                <li><a href="site-sidebar.php">サイドバー管理</a></li>
+                <li><a href="site-settings.php" class="<?php echo $current_page === 'settings' ? 'active' : ''; ?>">基本設定</a></li>
+                <li><a href="themes.php" class="<?php echo $current_page === 'themes' ? 'active' : ''; ?>">テーマ管理</a></li>
+                <li><a href="plugins.php" class="<?php echo $current_page === 'plugins' ? 'active' : ''; ?>">プラグイン管理</a></li>
+                <li><a href="site-menu.php" class="<?php echo $current_page === 'menu' ? 'active' : ''; ?>">メニュー管理</a></li>
+                <li><a href="site-sidebar.php" class="<?php echo $current_page === 'sidebar' ? 'active' : ''; ?>">サイドバー管理</a></li>
             </ul>
         </li>
         

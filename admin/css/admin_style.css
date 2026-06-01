@@ -142,10 +142,11 @@ body {
     color: #00a0d2;
 }
 
+/* 修正：サブメニューのアクティブ時の背景色を指定 */
 .wp-sidebar-submenu li a.active {
     color: #fff;
     font-weight: 600;
-    background: transparent;
+    background: var(--wp-menu-active);
 }
 
 .wp-sidebar-menu .menu-separator {

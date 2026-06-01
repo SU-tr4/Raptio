@@ -64,7 +64,8 @@ if ($id) {
 }
 
 $page_title  = $id ? '投稿の編集' : '新規投稿を追加';
-$current_page = 'editor';
+$current_page = 'posts';
+$sub_page = 'add';
 
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';

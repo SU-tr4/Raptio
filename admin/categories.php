@@ -1,5 +1,6 @@
 <?php
 // admin/categories.php
+
 require_once __DIR__ . '/auth.php';
 
 // 未認証時はダッシュボードへ強制リダイレクト

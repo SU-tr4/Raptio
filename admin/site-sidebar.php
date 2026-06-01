@@ -7,6 +7,8 @@ $config_data = file_exists(CONFIG_FILE) ? json_decode(file_get_contents(CONFIG_F
 $widgets = $config_data['widgets'] ?? ['sidebar' => [], 'footer1' => [], 'footer2' => []];
 
 $page_title = 'ウィジェット管理';
+$current_page = 'sidebar';
+
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
 
