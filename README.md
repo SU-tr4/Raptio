@@ -128,60 +128,52 @@ https://your-domain.com/admin/
 
 ```text
 raptio/
-├── index.php
-├── raptio_ファイル構成一覧.txt
-│
-├── admin/
-│   ├── api.php
-│   ├── auth.php
-│   ├── categories.php
-│   ├── cleanup.php
-│   ├── config.php
-│   ├── edit-posts.php
-│   ├── editor.php
-│   ├── index.php
-│   ├── media.php
-│   ├── plugin-helper.php
-│   ├── site-menu.php
-│   ├── site-settings.php
-│   ├── site-sidebar.php
-│   │
-│   ├── css/
-│   │   ├── admin_editor.css
-│   │   ├── admin_settings.css
-│   │   ├── admin_style.css
-│   │   └── admin_widgets.css
-│   │
-│   ├── img/
-│   │   ├── logo1.png
-│   │   ├── logo2.png
-│   │   └── Raptio_icon.png
-│   │
-│   └── includes/
-│       ├── header.php
-│       ├── sidebar.php
-│       └── footer.php
-│
-├── data/
-│   ├── posts/
-│   ├── posts_index.json
-│   └── site_config.json
-│
-├── includes/
-│   └── Parsedown.php
-│
-├── plugins/
-│
-├── themes/
-│   └── lux/
-│       ├── header.php
-│       ├── footer.php
-│       ├── sidebar.php
-│       ├── index.php
-│       ├── single.php
-│       └── style.css
-│
-└── uploads/
+├── index.php                    # フロントエンドのメインエントリ（テーマ読込・記事表示）
+├── setup.php                    # 初期設定スクリプト
+├── admin/                       # 管理画面
+│   ├── api.php                  # AJAX/APIエンドポイント（保存処理）
+│   ├── auth.php                 # 管理者認証処理
+│   ├── categories.php           # カテゴリー管理画面
+│   ├── config.php               # 管理画面共通設定
+│   ├── css/                     # 管理画面用CSS
+│   │   ├── admin_editor.css     # エディタ画面CSS
+│   │   ├── admin_settings.css   # 設定画面CSS
+│   │   ├── admin_style.css      # 管理画面共通CSS
+│   │   └── admin_widgets.css    # ウィジェット管理CSS
+│   ├── edit-posts.php           # 記事一覧・記事管理
+│   ├── editor.php               # 記事作成・編集画面
+│   ├── img/                     # 管理画面用画像
+│   │   ├── logo1.png            # Raptio標準ロゴ
+│   │   ├── logo2.png            # Raptio白枠付きロゴ
+│   │   ├── logo3.png            # 追加ロゴ
+│   │   └── Raptio_icon.png      # Raptioアイコン
+│   ├── includes/                # 管理画面用共通パーツ
+│   │   ├── footer.php           # 管理画面共通フッター
+│   │   ├── header.php           # 管理画面共通ヘッダー
+│   │   └── sidebar.php          # 管理画面共通サイドバー
+│   ├── index.php                # 管理画面ダッシュボード
+│   ├── login.php                # ログインページ
+│   ├── media.php                # メディアライブラリ管理
+│   ├── plugin-helper.php        # プラグイン補助関数
+│   ├── site-menu.php            # ヘッダーメニュー管理
+│   ├── site-settings.php        # サイト設定画面
+│   ├── site-sidebar.php         # サイドバー・ウィジェット管理
+│   └── themes.php               # テーマ管理画面
+├── data/                        # データ保存ディレクトリ
+│   ├── categories.json          # カテゴリーデータ
+│   ├── posts/                   # 記事データ保存
+│   ├── posts_index.json         # 記事インデックス
+│   └── site_config.json         # サイト設定保存
+├── includes/                    # 共通ライブラリ
+│   └── Parsedown.php            # Markdown→HTML変換ライブラリ
+├── plugins/                     # プラグイン格納
+│   └── index.php                # プラグイン一覧・制御
+├── themes/                      # テーマ格納
+│   ├── index.php                # テーマ一覧・制御
+│   ├── liel-clarion/            # テーマ: Liel-Clarion
+│   ├── liel-one/                # テーマ: Liel-One
+│   └── lux/                     # テーマ: Lux
+└── uploads/                     # ロゴ・ファビコン・アップロード画像保存
 ```
 
 ---
