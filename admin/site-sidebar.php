@@ -1,6 +1,8 @@
 <?php
 // admin/site-sidebar.php
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../includes/widget-registry.php'; 
+
 if (!check_raptio_auth()) { header('Location: index.php'); exit; }
 
 $config_data = file_exists(CONFIG_FILE) ? json_decode(file_get_contents(CONFIG_FILE), true) : [];
@@ -12,36 +14,31 @@ $current_page = 'sidebar';
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
 
-function getWidgetDefinition($type) {
-    $defs = [
-        'recent' => ['label' => '新着記事', 'desc' => '最近の投稿をリスト表示', 'fields' => ['title' => 'テキスト', 'count' => 'number']],
-        'popular' => ['label' => '人気記事', 'desc' => '閲覧数の多い記事を表示', 'fields' => ['title' => 'テキスト', 'count' => 'number']],
-        'text' => ['label' => 'テキスト', 'desc' => '任意のテキストを表示', 'fields' => ['title' => 'テキスト', 'content' => 'textarea']],
-        'html' => ['label' => 'HTML', 'desc' => 'カスタムHTMLコード', 'fields' => ['html_code' => 'textarea']],
-        'categories' => ['label' => 'カテゴリー', 'desc' => '記事のカテゴリー一覧', 'fields' => ['title' => 'テキスト']],
-        'search' => ['label' => '検索', 'desc' => 'サイト内検索フォーム', 'fields' => ['title' => 'テキスト']]
-    ];
-    return $defs[$type] ?? ['label' => '不明', 'desc' => '', 'fields' => []];
-}
-
+// ウィジェットカード生成関数
 function renderWidgetCard($areaId, $index, $type, $settings = []) {
-    $def = getWidgetDefinition($type);
+    $def = get_widget_definition($type);
     ob_start();
 ?>
     <div class="widget-card" draggable="true" ondragstart="draggedItem=this; event.stopPropagation();" data-type="<?php echo $type; ?>">
         <div class="widget-card-header" onclick="toggleWidget(this)">
-            <strong><?php echo $def['label']; ?></strong>
+            <strong><?php echo htmlspecialchars($def['label'] ?? '不明'); ?></strong>
             <button type="button" class="button-link-delete" onclick="event.stopPropagation(); this.closest('.widget-card').remove()">削除</button>
         </div>
         <div class="widget-card-body">
             <input type="hidden" name="widgets[<?php echo $areaId; ?>][<?php echo $index; ?>][type]" value="<?php echo $type; ?>">
-            <?php foreach ($def['fields'] as $key => $fieldType): ?>
+            <?php foreach ($def['fields'] as $key => $field): ?>
                 <div class="form-group">
-                    <label><?php echo ucfirst($key); ?></label>
-                    <?php if ($fieldType === 'textarea'): ?>
+                    <label><?php echo htmlspecialchars($field['label']); ?></label>
+                    <?php if ($field['type'] === 'textarea'): ?>
                         <textarea name="widgets[<?php echo $areaId; ?>][<?php echo $index; ?>][<?php echo $key; ?>]"><?php echo htmlspecialchars($settings[$key] ?? ''); ?></textarea>
-                    <?php elseif ($fieldType === 'number'): ?>
+                    <?php elseif ($field['type'] === 'number'): ?>
                         <input type="number" name="widgets[<?php echo $areaId; ?>][<?php echo $index; ?>][<?php echo $key; ?>]" value="<?php echo htmlspecialchars($settings[$key] ?? '5'); ?>">
+                    <?php elseif ($field['type'] === 'select'): ?>
+                        <select name="widgets[<?php echo $areaId; ?>][<?php echo $index; ?>][<?php echo $key; ?>]">
+                            <?php foreach ($field['options'] as $val => $label): ?>
+                                <option value="<?php echo $val; ?>" <?php echo ($settings[$key] ?? '') === $val ? 'selected' : ''; ?>><?php echo htmlspecialchars($label); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     <?php else: ?>
                         <input type="text" name="widgets[<?php echo $areaId; ?>][<?php echo $index; ?>][<?php echo $key; ?>]" value="<?php echo htmlspecialchars($settings[$key] ?? ''); ?>">
                     <?php endif; ?>
@@ -63,10 +60,10 @@ function renderWidgetCard($areaId, $index, $type, $settings = []) {
         <div class="widget-catalog">
             <h3>利用可能なウィジェット</h3>
             <div class="catalog-grid">
-                <?php foreach (['recent', 'popular', 'text', 'html', 'categories', 'search'] as $type): $def = getWidgetDefinition($type); ?>
+                <?php foreach (get_all_widget_definitions() as $type => $def): ?>
                     <div class="catalog-item" draggable="true" ondragstart="draggedItem=this; event.stopPropagation();" data-type="<?php echo $type; ?>">
-                        <?php echo $def['label']; ?>
-                        <span class="catalog-item-desc"><?php echo $def['desc']; ?></span>
+                        <?php echo htmlspecialchars($def['label']); ?>
+                        <span class="catalog-item-desc"><?php echo htmlspecialchars($def['desc']); ?></span>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -100,6 +97,7 @@ function renderWidgetCard($areaId, $index, $type, $settings = []) {
 </form>
 
 <script>
+const widgetDefinitions = <?php echo json_encode(get_all_widget_definitions()); ?>;
 let draggedItem = null;
 
 function renumberWidgets() {
@@ -107,7 +105,7 @@ function renumberWidgets() {
         const areaId = zone.dataset.area;
         const widgets = zone.querySelectorAll('.widget-card');
         widgets.forEach((widget, index) => {
-            widget.querySelectorAll('input, textarea').forEach(input => {
+            widget.querySelectorAll('input, textarea, select').forEach(input => {
                 let name = input.getAttribute('name');
                 if (name) {
                     const newName = name.replace(/widgets\[[^\]]+\]\[\d+\]/, `widgets[${areaId}][${index}]`);
@@ -121,7 +119,6 @@ function renumberWidgets() {
 document.getElementById('widgetSettingsForm').addEventListener('submit', function(e) {
     e.preventDefault();
     renumberWidgets();
-    
     const formData = new FormData(this);
     formData.append('action', 'save_widgets');
     
@@ -143,27 +140,15 @@ document.getElementById('widgetSettingsForm').addEventListener('submit', functio
     });
 });
 
-function handleDragOver(e) { 
-    e.preventDefault();
-    const zone = e.currentTarget;
-    zone.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-    const zone = e.currentTarget;
-    if (!zone.contains(e.relatedTarget)) {
-        zone.classList.remove('drag-over');
-    }
-}
+function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function handleDragLeave(e) { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('drag-over'); }
 
 function handleDrop(e) {
     e.preventDefault();
     const zone = e.currentTarget;
     zone.classList.remove('drag-over');
-    
     const postbox = zone.closest('.widget-postbox');
     postbox.classList.remove('is-closed');
-    zone.querySelectorAll('.widget-card-body').forEach(body => body.classList.remove('open'));
 
     const areaId = zone.dataset.area;
     let targetCard;
@@ -177,53 +162,49 @@ function handleDrop(e) {
         zone.appendChild(draggedItem);
         targetCard = draggedItem;
     }
-
-    if (targetCard) {
-        targetCard.querySelector('.widget-card-body').classList.add('open');
-    }
     draggedItem = null;
 }
 
-function togglePostbox(areaId) {
-    const postbox = document.getElementById('widget-postbox-' + areaId);
-    postbox.classList.toggle('is-closed');
-}
-
+function togglePostbox(areaId) { document.getElementById('widget-postbox-' + areaId).classList.toggle('is-closed'); }
 function toggleWidget(header) {
     const body = header.nextElementSibling;
     const zone = header.closest('.drop-zone');
-    
-    zone.querySelectorAll('.widget-card-body').forEach(el => {
-        if (el !== body) el.classList.remove('open');
-    });
-    
+    zone.querySelectorAll('.widget-card-body').forEach(el => { if (el !== body) el.classList.remove('open'); });
     body.classList.toggle('open');
 }
 
 function createWidgetTemplate(areaId, type) {
-    const labels = { 'recent': '新着記事', 'popular': '人気記事', 'text': 'テキスト', 'html': 'HTML', 'categories': 'カテゴリー', 'search': '検索' };
+    const def = widgetDefinitions[type];
+    if (!def) return '';
+
     let html = `
         <div class="widget-card" draggable="true" ondragstart="draggedItem=this; event.stopPropagation();" data-type="${type}">
             <div class="widget-card-header" onclick="toggleWidget(this)">
-                <strong>${labels[type]}</strong>
+                <strong>${def.label}</strong>
                 <button type="button" class="button-link-delete" onclick="event.stopPropagation(); this.closest('.widget-card').remove()">削除</button>
             </div>
             <div class="widget-card-body">
                 <input type="hidden" name="widgets[${areaId}][0][type]" value="${type}">
     `;
     
-    if (type === 'recent' || type === 'popular') {
-        html += `<div class="form-group"><label>Title</label><input type="text" name="widgets[${areaId}][0][title]"></div>`;
-        html += `<div class="form-group"><label>Count</label><input type="number" name="widgets[${areaId}][0][count]" value="5"></div>`;
-    } else if (type === 'text') {
-        html += `<div class="form-group"><label>Title</label><input type="text" name="widgets[${areaId}][0][title]"></div>`;
-        html += `<div class="form-group"><label>Content</label><textarea name="widgets[${areaId}][0][content]"></textarea></div>`;
-    } else if (type === 'html') {
-        html += `<div class="form-group"><label>Html_code</label><textarea name="widgets[${areaId}][0][html_code]"></textarea></div>`;
-    } else {
-        html += `<div class="form-group"><label>Title</label><input type="text" name="widgets[${areaId}][0][title]"></div>`;
+    for (const [key, field] of Object.entries(def.fields)) {
+        html += `<div class="form-group"><label>${field.label}</label>`;
+        
+        if (field.type === 'textarea') {
+            html += `<textarea name="widgets[${areaId}][0][${key}]"></textarea>`;
+        } else if (field.type === 'number') {
+            html += `<input type="number" name="widgets[${areaId}][0][${key}]" value="5">`;
+        } else if (field.type === 'select') {
+            html += `<select name="widgets[${areaId}][0][${key}]">`;
+            for (const [val, label] of Object.entries(field.options)) {
+                html += `<option value="${val}">${label}</option>`;
+            }
+            html += `</select>`;
+        } else {
+            html += `<input type="text" name="widgets[${areaId}][0][${key}]">`;
+        }
+        html += `</div>`;
     }
-
     html += `</div></div>`;
     return html;
 }

@@ -6,7 +6,7 @@ Theme URI: https://example.com/themes/lux
 Author: Sutr4
 Author URI: https://example.com/
 Description: シンプルかつモダンなブログ向けテーマ。レスポンシブデザインに対応し、高速な読み込みを実現します。
-Version: 1.0.0
+Version: 1.1.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Tags: blog, clean, modern, responsive
@@ -561,5 +561,84 @@ a:hover { color: #fff; }
     transition: 0.2s;
 }
 .footer-nav a:hover {
+    color: var(--text-main);
+}
+
+/* ==========================================================================
+   ウィジェット：記事表示レイアウト (共通)
+   ========================================================================== */
+.recent-list { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+}
+.recent-list li { 
+    margin-bottom: 15px; 
+}
+.recent-list a { 
+    text-decoration: none; 
+    color: inherit; 
+    display: block; 
+}
+.recent-list img { 
+    display: block; 
+    width: 100%; 
+    object-fit: cover;
+}
+
+/* 1. タイトルのみ */
+.recent-list-title-only li { margin-bottom: 10px; }
+
+/* 2. サムネイル小・タイトル横 */
+.recent-list-thumb-small-side .item-link { display: flex; align-items: center; gap: 10px; }
+.recent-list-thumb-small-side img { width: 60px; height: 60px; border-radius: 4px; flex-shrink: 0; }
+
+/* 3. サムネイルのみ（グリッド） */
+.recent-list-thumb-only { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.recent-list-thumb-only img { aspect-ratio: 1/1; border-radius: 4px; }
+
+/* 4. サムネイル大・タイトル下 */
+.recent-list-thumb-large-under .item-link { flex-direction: column; }
+.recent-list-thumb-large-under img { height: 160px; border-radius: 8px; margin-bottom: 8px; }
+
+/* 5. サムネイル大・タイトルホバー（1列・縦積み） */
+.recent-list-thumb-large-hover { 
+    display: block; /* グリッドをやめて縦並びにする */
+}
+.recent-list-thumb-large-hover li { 
+    position: relative; 
+    overflow: hidden; 
+    border-radius: 8px; 
+    margin-bottom: 10px; /* 記事間の余白 */
+}
+.recent-list-thumb-large-hover img { 
+    width: 100%; 
+    aspect-ratio: 16/9; 
+    object-fit: cover;
+    display: block;
+}
+.recent-list-thumb-large-hover .title { 
+    position: absolute; 
+    bottom: 0; 
+    left: 0; 
+    width: 100%; 
+    background: rgba(0,0,0,0.7); 
+    color: #fff; 
+    padding: 10px; 
+    font-size: 0.85rem; 
+    opacity: 0; 
+    transition: opacity 0.3s;
+}
+.recent-list-thumb-large-hover li:hover .title { 
+    opacity: 1; 
+}
+
+/* 検索フォーム */
+.sidebar-search-form { display: flex; width: 100%; }
+.sidebar-search-form input[type="text"] {
+    width: 100%; padding: 10px 14px;
+    background: var(--bg-main);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
     color: var(--text-main);
 }
