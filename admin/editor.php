@@ -83,8 +83,104 @@ require_once __DIR__ . '/includes/sidebar.php';
             <div class="form-group-title">
                 <input type="text" name="title" value="<?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?>" placeholder="タイトルを追加" required class="editor-title-input">
             </div>
-            <div class="form-group-content">
-                <textarea name="content" placeholder="ここに文章を入力してください（マークダウン対応）" required class="editor-textarea"><?php echo htmlspecialchars($content, ENT_QUOTES, 'UTF-8'); ?></textarea>
+
+            <!-- エディタモード切り替えタブ -->
+            <div class="editor-mode-bar">
+                <div class="editor-mode-tabs">
+                    <button type="button" class="editor-mode-tab active" data-mode="markdown" onclick="switchEditorMode('markdown')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        Markdown
+                    </button>
+                    <button type="button" class="editor-mode-tab" data-mode="richtext" onclick="switchEditorMode('richtext')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        リッチテキスト
+                    </button>
+                </div>
+                <span class="editor-mode-notice" id="editorModeNotice"></span>
+            </div>
+
+            <!-- マークダウンエディタ -->
+            <div id="markdownEditorWrap" class="form-group-content editor-pane active">
+                <div class="editor-toolbar" id="markdownToolbar">
+                    <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" title="見出し1" onclick="mdInsert('heading1')"><b>H1</b></button>
+                        <button type="button" class="toolbar-btn" title="見出し2" onclick="mdInsert('heading2')"><b>H2</b></button>
+                        <button type="button" class="toolbar-btn" title="見出し3" onclick="mdInsert('heading3')"><b>H3</b></button>
+                    </div>
+                    <div class="toolbar-sep"></div>
+                    <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" title="太字 (Ctrl+B)" onclick="mdInsert('bold')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="斜体 (Ctrl+I)" onclick="mdInsert('italic')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="取り消し線" onclick="mdInsert('strike')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><path d="M16 6C16 6 14.5 4 12 4C9.5 4 7 5.5 7 8C7 10.5 9 11.5 12 12"/><path d="M8 18C8 18 9.5 20 12 20C14.5 20 17 18.5 17 16C17 13.5 15 12.5 12 12"/></svg></button>
+                    </div>
+                    <div class="toolbar-sep"></div>
+                    <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" title="リンク" onclick="mdInsert('link')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="画像" onclick="mdInsert('image')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+                    </div>
+                    <div class="toolbar-sep"></div>
+                    <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" title="順序なしリスト" onclick="mdInsert('ul')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="順序ありリスト" onclick="mdInsert('ol')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="引用" onclick="mdInsert('blockquote')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 2v6c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="コード" onclick="mdInsert('code')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="コードブロック" onclick="mdInsert('codeblock')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="8" x2="12" y2="8"/><line x1="8" y1="16" x2="14" y2="16"/></svg></button>
+                    </div>
+                    <div class="toolbar-sep"></div>
+                    <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" title="水平線" onclick="mdInsert('hr')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+                    </div>
+                </div>
+                <textarea id="markdownTextarea" name="content" placeholder="ここに文章を入力してください（マークダウン対応）" required class="editor-textarea"><?php echo htmlspecialchars($content, ENT_QUOTES, 'UTF-8'); ?></textarea>
+            </div>
+
+            <!-- リッチテキストエディタ -->
+            <div id="richtextEditorWrap" class="form-group-content editor-pane" style="display:none;">
+                <div class="editor-toolbar" id="richtextToolbar">
+                    <div class="toolbar-group">
+                        <select class="toolbar-select" onchange="rtExecBlock(this.value); this.value=''" title="段落スタイル">
+                            <option value="">段落スタイル</option>
+                            <option value="p">本文</option>
+                            <option value="h1">見出し1</option>
+                            <option value="h2">見出し2</option>
+                            <option value="h3">見出し3</option>
+                            <option value="h4">見出し4</option>
+                            <option value="pre">コード</option>
+                        </select>
+                    </div>
+                    <div class="toolbar-sep"></div>
+                    <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" title="太字 (Ctrl+B)" onclick="rtExec('bold')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="斜体 (Ctrl+I)" onclick="rtExec('italic')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="下線 (Ctrl+U)" onclick="rtExec('underline')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="取り消し線" onclick="rtExec('strikeThrough')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><path d="M16 6C16 6 14.5 4 12 4C9.5 4 7 5.5 7 8C7 10.5 9 11.5 12 12"/><path d="M8 18C8 18 9.5 20 12 20C14.5 20 17 18.5 17 16C17 13.5 15 12.5 12 12"/></svg></button>
+                    </div>
+                    <div class="toolbar-sep"></div>
+                    <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" title="左揃え" onclick="rtExec('justifyLeft')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="中央揃え" onclick="rtExec('justifyCenter')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="右揃え" onclick="rtExec('justifyRight')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg></button>
+                    </div>
+                    <div class="toolbar-sep"></div>
+                    <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" title="箇条書き" onclick="rtExec('insertUnorderedList')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="番号リスト" onclick="rtExec('insertOrderedList')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="インデント増" onclick="rtExec('indent')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/><path d="M7 12l4 4 4-4"/><line x1="11" y1="8" x2="11" y2="16"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="インデント減" onclick="rtExec('outdent')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/><path d="M7 8l4 4-4 4"/><line x1="11" y1="8" x2="11" y2="16"/></svg></button>
+                    </div>
+                    <div class="toolbar-sep"></div>
+                    <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" title="リンク挿入" onclick="rtInsertLink()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="リンク解除" onclick="rtExec('unlink')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.84 12.25l1.72-1.71h-.02a5.004 5.004 0 0 0-.12-7.07 5.006 5.006 0 0 0-6.95 0l-1.72 1.71"/><path d="M5.17 11.75l-1.71 1.71a5.004 5.004 0 0 0 .12 7.07 5.006 5.006 0 0 0 6.95 0l1.71-1.71"/><line x1="8" y1="2" x2="8" y2="5"/><line x1="2" y1="8" x2="5" y2="8"/><line x1="16" y1="19" x2="16" y2="22"/><line x1="19" y1="16" x2="22" y2="16"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="画像挿入" onclick="rtInsertImage()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>
+                    </div>
+                    <div class="toolbar-sep"></div>
+                    <div class="toolbar-group">
+                        <button type="button" class="toolbar-btn" title="元に戻す (Ctrl+Z)" onclick="rtExec('undo')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="やり直す (Ctrl+Y)" onclick="rtExec('redo')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg></button>
+                    </div>
+                </div>
+                <div id="richtextArea" class="editor-richtext" contenteditable="true"></div>
             </div>
         </div>
 
@@ -221,6 +317,13 @@ require_once __DIR__ . '/includes/sidebar.php';
 
 <script>
 // ============================================================
+// ユーティリティ
+// ============================================================
+function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================================
 // サムネイル関連
 // ============================================================
 function removeThumbnail() {
@@ -254,10 +357,13 @@ function applyThumbnail(url, isDataUrl) {
 // ============================================================
 let selectedLibraryItem = null;
 let pendingUploadFile  = null;
+// リッチテキストから画像/リンク挿入時に使うコールバック
+let _rtMediaCallback = null;
 
-function openMediaModal() {
+function openMediaModal(callback) {
     selectedLibraryItem = null;
     pendingUploadFile   = null;
+    _rtMediaCallback = callback || null;
     updateFooter();
     document.getElementById('media-modal-overlay').classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -268,6 +374,7 @@ function closeMediaModal() {
     document.body.style.overflow = '';
     selectedLibraryItem = null;
     pendingUploadFile   = null;
+    _rtMediaCallback = null;
 }
 
 function closeMediaModalOnOverlay(e) {
@@ -326,8 +433,13 @@ function updateFooter() {
 // 決定ボタン
 function applySelectedImage() {
     if (selectedLibraryItem) {
-        applyThumbnail(selectedLibraryItem.url, false);
-        closeMediaModal();
+        if (_rtMediaCallback) {
+            _rtMediaCallback(selectedLibraryItem.url);
+            closeMediaModal();
+        } else {
+            applyThumbnail(selectedLibraryItem.url, false);
+            closeMediaModal();
+        }
     } else if (pendingUploadFile) {
         uploadAndApply(pendingUploadFile);
     }
@@ -347,27 +459,38 @@ async function uploadAndApply(file) {
     formData.append('async_upload', file);
 
     try {
-        // media.php のアップロードロジックを流用（直接 POST）
         const res = await fetch('api.php?action=upload_media', { method: 'POST', body: formData });
         const data = await res.json();
         if (data.success && data.url) {
-            applyThumbnail('../' + data.url, false);
-            // ライブラリへもアイテムを動的追加
+            if (_rtMediaCallback) {
+                _rtMediaCallback('../' + data.url);
+            } else {
+                applyThumbnail('../' + data.url, false);
+            }
             addToLibraryGrid(data.url, data.name, data.size);
         } else {
-            // フォールバック：Data URLとして即時プレビュー（ファイルは thumb_file として送信）
             const reader = new FileReader();
-            reader.onload = e => applyThumbnail(e.target.result, true);
+            reader.onload = e => {
+                if (_rtMediaCallback) {
+                    _rtMediaCallback(e.target.result);
+                } else {
+                    applyThumbnail(e.target.result, true);
+                }
+            };
             reader.readAsDataURL(file);
-            // thumb_file input に割り当て
-            assignFileToHiddenInput(file);
+            if (!_rtMediaCallback) assignFileToHiddenInput(file);
         }
     } catch {
-        // fetch 失敗時もフォールバック
         const reader = new FileReader();
-        reader.onload = e => applyThumbnail(e.target.result, true);
+        reader.onload = e => {
+            if (_rtMediaCallback) {
+                _rtMediaCallback(e.target.result);
+            } else {
+                applyThumbnail(e.target.result, true);
+            }
+        };
         reader.readAsDataURL(file);
-        assignFileToHiddenInput(file);
+        if (!_rtMediaCallback) assignFileToHiddenInput(file);
     }
 
     inner.style.display       = '';
@@ -375,7 +498,6 @@ async function uploadAndApply(file) {
     closeMediaModal();
 }
 
-// DataTransfer を使って thumb_file input にファイルをセット
 function assignFileToHiddenInput(file) {
     try {
         const dt = new DataTransfer();
@@ -384,7 +506,6 @@ function assignFileToHiddenInput(file) {
     } catch(e) {}
 }
 
-// ライブラリグリッドに動的追加
 function addToLibraryGrid(url, name, size) {
     const grid = document.getElementById('library-grid');
     const emptyEl = grid.querySelector('.library-empty');
@@ -433,7 +554,6 @@ function handleDropzoneFile(file) {
     }
     pendingUploadFile = file;
 
-    // プレビュー表示
     const reader = new FileReader();
     reader.onload = e => {
         const inner = dropzone.querySelector('.dropzone-inner');
@@ -467,17 +587,476 @@ document.addEventListener('keydown', e => {
 });
 
 // ============================================================
-// フォーム送信
+// エディタモード切り替え（Markdown ⇔ リッチテキスト）
+// ============================================================
+let currentEditorMode = 'markdown';
+
+// ----------------------------------------------------------------
+// Markdown → HTML
+// ----------------------------------------------------------------
+function markdownToHtml(md) {
+    if (!md || !md.trim()) return '<p><br></p>';
+
+    // コードブロックを先に退避（内部をエスケープして保護）
+    const codeBlocks = [];
+    md = md.replace(/^```(\w*)\n?([\s\S]*?)^```/gm, (_, lang, code) => {
+        codeBlocks.push(`<pre><code>${escHtml(code.replace(/\n$/, ''))}</code></pre>`);
+        return `\x00CB${codeBlocks.length - 1}\x00`;
+    });
+
+    // インラインコードを退避
+    const inlineCodes = [];
+    md = md.replace(/`([^`\n]+)`/g, (_, c) => {
+        inlineCodes.push(`<code>${escHtml(c)}</code>`);
+        return `\x00IC${inlineCodes.length - 1}\x00`;
+    });
+
+    // 空行で段落を分割
+    const blocks = md.split(/\n{2,}/);
+    const htmlParts = blocks.map(block => {
+        const trimmed = block.trim();
+        if (!trimmed) return '';
+
+        // コードブロックプレースホルダー
+        if (/^\x00CB\d+\x00$/.test(trimmed)) return trimmed;
+
+        // 見出し
+        const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
+        if (heading) {
+            const level = heading[1].length;
+            return `<h${level}>${inlineToHtml(heading[2], inlineCodes)}</h${level}>`;
+        }
+
+        // 水平線
+        if (/^[-*_]{3,}$/.test(trimmed)) return '<hr>';
+
+        // 引用ブロック
+        if (/^>/.test(trimmed)) {
+            const content = trimmed.split('\n').map(l => l.replace(/^>\s?/, '')).join('\n');
+            return `<blockquote>${inlineToHtml(content, inlineCodes)}</blockquote>`;
+        }
+
+        // 順序ありリスト
+        if (/^\d+\.\s/.test(trimmed)) {
+            const items = trimmed.split('\n')
+                .filter(l => /^\d+\.\s/.test(l))
+                .map(l => `<li>${inlineToHtml(l.replace(/^\d+\.\s+/, ''), inlineCodes)}</li>`)
+                .join('');
+            return `<ol>${items}</ol>`;
+        }
+
+        // 順序なしリスト
+        if (/^[-*+]\s/.test(trimmed)) {
+            const items = trimmed.split('\n')
+                .filter(l => /^[-*+]\s/.test(l))
+                .map(l => `<li>${inlineToHtml(l.replace(/^[-*+]\s+/, ''), inlineCodes)}</li>`)
+                .join('');
+            return `<ul>${items}</ul>`;
+        }
+
+        // 段落（単一行の場合はbrなし、複数行はbr区切り）
+        const lines = trimmed.split('\n');
+        const content = lines.map(l => inlineToHtml(l, inlineCodes)).join('<br>');
+        return `<p>${content}</p>`;
+    });
+
+    let html = htmlParts.join('\n');
+
+    // プレースホルダーを戻す
+    html = html.replace(/\x00CB(\d+)\x00/g, (_, i) => codeBlocks[+i]);
+    html = html.replace(/\x00IC(\d+)\x00/g, (_, i) => inlineCodes[+i]);
+
+    return html || '<p><br></p>';
+}
+
+// インライン要素の変換
+function inlineToHtml(text, inlineCodes) {
+    // インラインコードプレースホルダーはそのまま通す
+    // 画像（リンクより先）
+    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+    // リンク
+    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    // 太字+斜体
+    text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    // 太字
+    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
+    // 斜体
+    text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
+    text = text.replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '<em>$1</em>');
+    // 取り消し線
+    text = text.replace(/~~(.+?)~~/g, '<del>$1</del>');
+    // インラインコード戻し
+    if (inlineCodes) {
+        text = text.replace(/\x00IC(\d+)\x00/g, (_, i) => inlineCodes[+i]);
+    }
+    return text;
+}
+
+// ----------------------------------------------------------------
+// HTML → Markdown（execCommandが生成する汚いHTMLを完全に正規化）
+// ----------------------------------------------------------------
+function htmlToMarkdown(html) {
+    if (!html || !html.trim()) return '';
+
+    const div = document.createElement('div');
+    div.innerHTML = html;
+
+    // Step1: DOMを正規化（execCommandが挿入するゴミ属性・タグを整理）
+    normalizeEditableHtml(div);
+
+    // Step2: DOM → Markdown テキスト変換
+    const md = domToMarkdown(div).trim();
+    // 3連続以上の空行を2行に
+    return md.replace(/\n{3,}/g, '\n\n');
+}
+
+// execCommand由来のゴミHTML正規化
+function normalizeEditableHtml(root) {
+    // style付きspanをアンラップ or セマンティックタグに変換
+    root.querySelectorAll('span').forEach(el => {
+        const style = el.getAttribute('style') || '';
+        const fw = el.style.fontWeight;
+        const fs = el.style.fontStyle;
+        const td = el.style.textDecoration;
+
+        if (fw === 'bold' || fw === '700' || parseInt(fw) >= 700) {
+            const strong = document.createElement('strong');
+            while (el.firstChild) strong.appendChild(el.firstChild);
+            el.parentNode.replaceChild(strong, el);
+        } else if (fs === 'italic') {
+            const em = document.createElement('em');
+            while (el.firstChild) em.appendChild(el.firstChild);
+            el.parentNode.replaceChild(em, el);
+        } else if (td === 'line-through') {
+            const del = document.createElement('del');
+            while (el.firstChild) del.appendChild(el.firstChild);
+            el.parentNode.replaceChild(del, el);
+        } else if (td === 'underline') {
+            const u = document.createElement('u');
+            while (el.firstChild) u.appendChild(el.firstChild);
+            el.parentNode.replaceChild(u, el);
+        } else {
+            // 装飾なしspanはアンラップ
+            const frag = document.createDocumentFragment();
+            while (el.firstChild) frag.appendChild(el.firstChild);
+            el.parentNode.replaceChild(frag, el);
+        }
+    });
+
+    // <font>タグをアンラップ
+    root.querySelectorAll('font').forEach(el => {
+        const frag = document.createDocumentFragment();
+        while (el.firstChild) frag.appendChild(el.firstChild);
+        el.parentNode.replaceChild(frag, el);
+    });
+
+    // styleのあるb/i/strong/emはそのままにして属性だけ削除
+    root.querySelectorAll('b,i,strong,em,del,s,u,a,h1,h2,h3,h4,h5,h6,p,li,ul,ol,blockquote,pre,code').forEach(el => {
+        // href以外のstyle属性を削除
+        if (el.tagName.toLowerCase() !== 'a') {
+            el.removeAttribute('style');
+        }
+        el.removeAttribute('class');
+        el.removeAttribute('id');
+    });
+}
+
+// DOM → Markdown 再帰変換
+function domToMarkdown(node, ctx) {
+    ctx = ctx || { listDepth: 0 };
+
+    if (node.nodeType === Node.TEXT_NODE) {
+        return node.textContent;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+    const tag = node.tagName.toLowerCase();
+
+    // 子ノードを再帰変換するヘルパー
+    const innerMd = (extraCtx) => {
+        const c = Object.assign({}, ctx, extraCtx || {});
+        return Array.from(node.childNodes).map(n => domToMarkdown(n, c)).join('');
+    };
+
+    switch (tag) {
+        case 'h1': return `# ${innerMd().trim()}\n\n`;
+        case 'h2': return `## ${innerMd().trim()}\n\n`;
+        case 'h3': return `### ${innerMd().trim()}\n\n`;
+        case 'h4': return `#### ${innerMd().trim()}\n\n`;
+        case 'h5': return `##### ${innerMd().trim()}\n\n`;
+        case 'h6': return `###### ${innerMd().trim()}\n\n`;
+
+        case 'strong': case 'b': {
+            const t = innerMd().trim();
+            return t ? `**${t}**` : '';
+        }
+        case 'em': case 'i': {
+            const t = innerMd().trim();
+            return t ? `*${t}*` : '';
+        }
+        case 'del': case 's': case 'strike': {
+            const t = innerMd().trim();
+            return t ? `~~${t}~~` : '';
+        }
+        case 'u': return innerMd(); // mdに相当なし、テキストとして保持
+
+        case 'a': {
+            const href = node.getAttribute('href') || '';
+            const text = innerMd().trim();
+            return text ? `[${text}](${href})` : href;
+        }
+        case 'img': {
+            const src = node.getAttribute('src') || '';
+            const alt = node.getAttribute('alt') || '';
+            return `![${alt}](${src})`;
+        }
+
+        case 'code': {
+            // preの中のcodeはpreで処理する
+            if (node.parentElement && node.parentElement.tagName.toLowerCase() === 'pre') {
+                return node.textContent;
+            }
+            return `\`${node.textContent}\``;
+        }
+        case 'pre': {
+            const codeEl = node.querySelector('code');
+            const codeText = (codeEl ? codeEl.textContent : node.textContent);
+            return `\`\`\`\n${codeText}\n\`\`\`\n\n`;
+        }
+
+        case 'blockquote': {
+            const content = innerMd().trim();
+            return content.split('\n').map(l => `> ${l}`).join('\n') + '\n\n';
+        }
+
+        case 'ul': {
+            const items = Array.from(node.childNodes)
+                .filter(n => n.nodeType === Node.ELEMENT_NODE && n.tagName.toLowerCase() === 'li')
+                .map(li => {
+                    const text = domToMarkdown(li, ctx).trim();
+                    return `- ${text}`;
+                }).join('\n');
+            return items ? items + '\n\n' : '';
+        }
+        case 'ol': {
+            const items = Array.from(node.childNodes)
+                .filter(n => n.nodeType === Node.ELEMENT_NODE && n.tagName.toLowerCase() === 'li')
+                .map((li, idx) => {
+                    const text = domToMarkdown(li, ctx).trim();
+                    return `${idx + 1}. ${text}`;
+                }).join('\n');
+            return items ? items + '\n\n' : '';
+        }
+        case 'li': return innerMd();
+
+        case 'br': {
+            // ブロック要素の末尾brは無視、それ以外は改行
+            return '\n';
+        }
+        case 'hr': return '\n---\n\n';
+
+        case 'p': {
+            const content = innerMd().trim();
+            if (!content) return '';
+            return content + '\n\n';
+        }
+        case 'div': {
+            const content = innerMd().trim();
+            if (!content) return '';
+            return content + '\n\n';
+        }
+
+        default:
+            return innerMd();
+    }
+}
+
+function switchEditorMode(mode) {
+    if (mode === currentEditorMode) return;
+
+    const mdWrap = document.getElementById('markdownEditorWrap');
+    const rtWrap = document.getElementById('richtextEditorWrap');
+    const mdTextarea = document.getElementById('markdownTextarea');
+    const rtArea = document.getElementById('richtextArea');
+    const tabs = document.querySelectorAll('.editor-mode-tab');
+    const notice = document.getElementById('editorModeNotice');
+
+    if (mode === 'richtext') {
+        rtArea.innerHTML = markdownToHtml(mdTextarea.value);
+        mdWrap.style.display = 'none';
+        rtWrap.style.display = '';
+        notice.textContent = '※ リッチテキストで編集中。保存時にMarkdownへ変換されます。';
+    } else {
+        mdTextarea.value = htmlToMarkdown(rtArea.innerHTML);
+        rtWrap.style.display = 'none';
+        mdWrap.style.display = '';
+        notice.textContent = '';
+    }
+
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    currentEditorMode = mode;
+}
+
+// ============================================================
+// Markdownエディタ ツールバー操作
+// ============================================================
+function mdInsert(action) {
+    const ta = document.getElementById('markdownTextarea');
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = ta.value.substring(start, end);
+    let before = '', after = '', defaultText = '';
+    let cursorOffset = null;
+
+    switch (action) {
+        case 'heading1':    before = '# ';    defaultText = '見出し1'; break;
+        case 'heading2':    before = '## ';   defaultText = '見出し2'; break;
+        case 'heading3':    before = '### ';  defaultText = '見出し3'; break;
+        case 'bold':        before = '**'; after = '**'; defaultText = '太字テキスト'; break;
+        case 'italic':      before = '*';  after = '*';  defaultText = '斜体テキスト'; break;
+        case 'strike':      before = '~~'; after = '~~'; defaultText = '取り消し線'; break;
+        case 'link': {
+            const url = prompt('URLを入力してください:', 'https://');
+            if (!url) return;
+            const text = selected || 'リンクテキスト';
+            const insertion = `[${text}](${url})`;
+            ta.setRangeText(insertion, start, end, 'end');
+            ta.focus();
+            return;
+        }
+        case 'image': {
+            const url = prompt('画像URLを入力してください:', 'https://');
+            if (!url) return;
+            const alt = selected || '画像';
+            const insertion = `![${alt}](${url})`;
+            ta.setRangeText(insertion, start, end, 'end');
+            ta.focus();
+            return;
+        }
+        case 'ul': {
+            const lines = (selected || 'リスト項目').split('\n').map(l => `- ${l}`).join('\n');
+            ta.setRangeText('\n' + lines + '\n', start, end, 'end');
+            ta.focus();
+            return;
+        }
+        case 'ol': {
+            const lines = (selected || 'リスト項目').split('\n').map((l, i) => `${i+1}. ${l}`).join('\n');
+            ta.setRangeText('\n' + lines + '\n', start, end, 'end');
+            ta.focus();
+            return;
+        }
+        case 'blockquote': {
+            const lines = (selected || '引用テキスト').split('\n').map(l => `> ${l}`).join('\n');
+            ta.setRangeText('\n' + lines + '\n', start, end, 'end');
+            ta.focus();
+            return;
+        }
+        case 'code':        before = '`';  after = '`';  defaultText = 'code'; break;
+        case 'codeblock':   before = '```\n'; after = '\n```'; defaultText = 'コードをここに'; break;
+        case 'hr': {
+            ta.setRangeText('\n\n---\n\n', start, end, 'end');
+            ta.focus();
+            return;
+        }
+    }
+
+    const text = selected || defaultText;
+    const insertion = before + text + after;
+    ta.setRangeText(insertion, start, end, 'select');
+
+    // 選択状態を挿入テキストのみに
+    if (!selected) {
+        ta.setSelectionRange(start + before.length, start + before.length + text.length);
+    }
+    ta.focus();
+}
+
+// キーボードショートカット（Markdownモード）
+document.getElementById('markdownTextarea').addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey)) {
+        if (e.key === 'b') { e.preventDefault(); mdInsert('bold'); }
+        if (e.key === 'i') { e.preventDefault(); mdInsert('italic'); }
+        if (e.key === 'k') { e.preventDefault(); mdInsert('link'); }
+    }
+});
+
+// ============================================================
+// リッチテキストエディタ操作
+// ============================================================
+function rtExec(cmd, value) {
+    document.getElementById('richtextArea').focus();
+    document.execCommand(cmd, false, value || null);
+}
+
+function rtExecBlock(tag) {
+    if (!tag) return;
+    document.getElementById('richtextArea').focus();
+    document.execCommand('formatBlock', false, tag);
+}
+
+function rtInsertLink() {
+    const selection = window.getSelection();
+    const selectedText = selection ? selection.toString() : '';
+    const url = prompt('リンクURLを入力してください:', 'https://');
+    if (!url) return;
+    document.getElementById('richtextArea').focus();
+    if (selectedText) {
+        document.execCommand('createLink', false, url);
+    } else {
+        const text = prompt('リンクテキストを入力してください:', 'リンク') || 'リンク';
+        document.execCommand('insertHTML', false, `<a href="${url}">${text}</a>`);
+    }
+}
+
+function rtInsertImage() {
+    // savedSelectionを保持してからモーダルを開く
+    const sel = window.getSelection();
+    let savedRange = null;
+    if (sel && sel.rangeCount > 0) {
+        savedRange = sel.getRangeAt(0).cloneRange();
+    }
+    openMediaModal(function(url) {
+        const area = document.getElementById('richtextArea');
+        area.focus();
+        if (savedRange) {
+            const sel2 = window.getSelection();
+            sel2.removeAllRanges();
+            sel2.addRange(savedRange);
+        }
+        document.execCommand('insertImage', false, url);
+    });
+}
+
+// キーボードショートカット（リッチテキストモード）
+document.getElementById('richtextArea').addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey)) {
+        if (e.key === 'k') {
+            e.preventDefault();
+            rtInsertLink();
+        }
+    }
+});
+
+// ============================================================
+// フォーム送信（モード問わず content を同期）
 // ============================================================
 document.getElementById('editorForm').addEventListener('submit', function(e) {
     e.preventDefault();
+
+    // リッチテキストモードの場合、送信前に HTML→MD 変換して textarea に反映
+    if (currentEditorMode === 'richtext') {
+        const rtArea = document.getElementById('richtextArea');
+        const mdTextarea = document.getElementById('markdownTextarea');
+        mdTextarea.value = htmlToMarkdown(rtArea.innerHTML);
+    }
+
     const formData = new FormData(this);
     fetch('api.php', { method: 'POST', body: formData })
         .then(res => res.json())
         .then(data => {
             if (data.success) { 
                 alert('保存しました'); 
-                // 修正箇所：一覧ページへリダイレクト
                 window.location.href = 'edit-posts.php'; 
             }
             else { alert('エラー: ' + (data.error || '不明なエラー')); }

@@ -14,12 +14,13 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 0;
 }
 
 /* 巨大タイトル入力欄の最適化 */
 .form-group-title {
     width: 100%;
+    margin-bottom: 0;
 }
 
 .editor-title-input {
@@ -27,11 +28,152 @@
     font-size: 20px !important;
     padding: 12px !important;
     border: 1px solid var(--wp-border) !important;
-    border-radius: 4px !important;
+    border-radius: 4px 4px 0 0 !important;
     background: #fff;
+    border-bottom: none !important;
 }
 
-/* マークダウン本文入力エリアの最適化 */
+/* ============================================================
+   エディタモード切り替えバー
+   ============================================================ */
+.editor-mode-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f6f7f7;
+    border: 1px solid var(--wp-border);
+    border-top: none;
+    border-bottom: none;
+    padding: 0 12px 0 0;
+    gap: 12px;
+}
+
+.editor-mode-tabs {
+    display: flex;
+}
+
+.editor-mode-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: none;
+    border: none;
+    border-right: 1px solid var(--wp-border);
+    font-size: 13px;
+    font-weight: 500;
+    color: #646970;
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+}
+
+.editor-mode-tab:hover {
+    background: #fff;
+    color: #1d2327;
+}
+
+.editor-mode-tab.active {
+    background: #fff;
+    color: #2271b1;
+    font-weight: 600;
+    box-shadow: inset 0 -2px 0 #2271b1;
+}
+
+.editor-mode-tab svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.editor-mode-tab.active svg {
+    opacity: 1;
+}
+
+.editor-mode-notice {
+    font-size: 11px;
+    color: #646970;
+    font-style: italic;
+}
+
+/* ============================================================
+   エディタペイン共通
+   ============================================================ */
+.editor-pane {
+    width: 100%;
+}
+
+/* ============================================================
+   ツールバー（Markdown・リッチテキスト共通）
+   ============================================================ */
+.editor-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 6px 10px;
+    background: #fafafa;
+    border: 1px solid var(--wp-border);
+    border-bottom: none;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+}
+
+.toolbar-sep {
+    width: 1px;
+    height: 20px;
+    background: #dcdcde;
+    margin: 0 4px;
+}
+
+.toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    color: #3c434a;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.toolbar-btn:hover {
+    background: #fff;
+    border-color: #c3c4c7;
+    color: #1d2327;
+}
+
+.toolbar-btn:active {
+    background: #f0f0f1;
+}
+
+.toolbar-select {
+    height: 28px;
+    padding: 0 6px;
+    font-size: 12px;
+    border: 1px solid #c3c4c7;
+    border-radius: 3px;
+    background: #fff;
+    color: #3c434a;
+    cursor: pointer;
+}
+
+.toolbar-select:hover {
+    border-color: #8c8f94;
+}
+
+/* ============================================================
+   マークダウン本文入力エリア
+   ============================================================ */
 .form-group-content {
     width: 100%;
 }
@@ -43,13 +185,81 @@
     font-size: 14px !important;
     padding: 15px !important;
     border: 1px solid var(--wp-border) !important;
-    border-radius: 4px !important;
+    border-radius: 0 0 4px 4px !important;
     resize: vertical !important;
     background: #fff;
     line-height: 1.6;
+    margin-bottom: 20px;
 }
 
-/* 右側サイド設定ボックス */
+/* ============================================================
+   リッチテキストエリア
+   ============================================================ */
+.editor-richtext {
+    width: 100%;
+    min-height: 480px;
+    padding: 15px;
+    border: 1px solid var(--wp-border);
+    border-radius: 0 0 4px 4px;
+    background: #fff;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #1d2327;
+    outline: none;
+    box-sizing: border-box;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.editor-richtext:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* リッチテキスト内のスタイル */
+.editor-richtext h1 { font-size: 1.8em; margin: 0.6em 0 0.3em; font-weight: 700; }
+.editor-richtext h2 { font-size: 1.5em; margin: 0.6em 0 0.3em; font-weight: 700; }
+.editor-richtext h3 { font-size: 1.25em; margin: 0.6em 0 0.3em; font-weight: 700; }
+.editor-richtext h4 { font-size: 1.1em; margin: 0.5em 0 0.25em; font-weight: 700; }
+.editor-richtext p  { margin: 0 0 0.8em; }
+.editor-richtext ul, .editor-richtext ol { padding-left: 1.8em; margin: 0.5em 0; }
+.editor-richtext li { margin: 0.2em 0; }
+.editor-richtext blockquote {
+    border-left: 3px solid #c3c4c7;
+    padding: 4px 0 4px 14px;
+    color: #646970;
+    margin: 0.8em 0;
+}
+.editor-richtext pre {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 3px;
+    padding: 12px 14px;
+    font-family: monospace;
+    font-size: 13px;
+    overflow-x: auto;
+    margin: 0.8em 0;
+}
+.editor-richtext code {
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 2px;
+    padding: 1px 5px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+.editor-richtext pre code {
+    background: none;
+    border: none;
+    padding: 0;
+}
+.editor-richtext a { color: #2271b1; text-decoration: underline; }
+.editor-richtext img { max-width: 100%; height: auto; border-radius: 3px; }
+.editor-richtext hr { border: none; border-top: 1px solid #dcdcde; margin: 1.2em 0; }
+
+/* ============================================================
+   右側サイド設定ボックス
+   ============================================================ */
 .editor-right {
     width: 280px;
     min-width: 280px;
