@@ -1,7 +1,9 @@
 <?php
 // admin/auth.php
 require_once __DIR__ . '/config.php';
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // ログアウト処理
 if (isset($_GET['action']) && $_GET['action'] === 'logout') {

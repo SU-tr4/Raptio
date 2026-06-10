@@ -1,0 +1,87 @@
+{
+    "site_name": "Raptio",
+    "username": "root",
+    "password": "$2y$10$VubTRMaE6.g0hSY54xcTpuk5SE8nWSeR7NNQ.Xrgutp8ajERWesH.",
+    "installed_at": "2026-05-30 17:28:52",
+    "site_description": "これはデモサイトです",
+    "footer_text": "Raptio Project. All rights reserved.",
+    "logo_image_path": "uploads\/logo_1780267737.png",
+    "favicon_image_path": "uploads\/favicon_1780267737.png",
+    "active_theme": "lux",
+    "menus": {
+        "m_1780247160508": {
+            "name": "ヘッダーメニュー",
+            "items": {
+                "1780247164571": {
+                    "label": "テストメニュー1",
+                    "url": "http:\/\/localhost\/raptio\/"
+                },
+                "1780247187294": {
+                    "label": "テストメニュー2",
+                    "url": "http:\/\/localhost\/raptio\/"
+                }
+            }
+        },
+        "m_1780267617740": {
+            "name": "フッターメニュー",
+            "items": {
+                "1780267623484": {
+                    "label": "Fメニュー1",
+                    "url": "http:\/\/localhost\/raptio\/"
+                }
+            }
+        },
+        "m_1780267672790": {
+            "name": "ヘッダーモバイルメニュー",
+            "items": {
+                "1780267675812": {
+                    "label": "DEMO1",
+                    "url": "http:\/\/localhost\/raptio\/"
+                }
+            }
+        }
+    },
+    "menu_locations": {
+        "header": "m_1780247160508",
+        "footer": "m_1780267617740",
+        "header_mobile": "m_1780267672790",
+        "header_mobile_btn": "m_1780267672790",
+        "footer_mobile_btn": "m_1780267672790",
+        "mobile_slide": "m_1780267672790"
+    },
+    "widgets": {
+        "sidebar": [
+            {
+                "type": "search",
+                "title": "検索フォーム"
+            },
+            {
+                "type": "recent",
+                "title": "新着記事",
+                "count": "5",
+                "layout": "thumb-large-hover"
+            },
+            {
+                "type": "popular",
+                "title": "人気記事",
+                "count": "5",
+                "layout": "thumb-small-side"
+            },
+            {
+                "type": "categories",
+                "title": "カテゴリ"
+            },
+            {
+                "type": "text",
+                "title": "フリーテキスト",
+                "content": "フリーテキスト\r\nフリーテキスト\r\n"
+            }
+        ],
+        "footer1": [
+            {
+                "type": "categories",
+                "title": ""
+            }
+        ]
+    }
+}

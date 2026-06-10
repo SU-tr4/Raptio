@@ -1,0 +1,26 @@
+[
+    {
+        "id": "cat_6a1c6a545e7232.75424448",
+        "name": "カテゴリ１",
+        "slug": "category1",
+        "parent_id": ""
+    },
+    {
+        "id": "cat_6a1c6a63a75bf0.64188018",
+        "name": "カテゴリ2",
+        "slug": "category2",
+        "parent_id": "cat_6a1c6a545e7232.75424448"
+    },
+    {
+        "id": "cat_6a1e12ecaa11e7.95785461",
+        "name": "カテゴリ３",
+        "slug": "category3",
+        "parent_id": "cat_6a1c6a63a75bf0.64188018"
+    },
+    {
+        "id": "cat_6a1e1309cece48.80987201",
+        "name": "カテゴリ4",
+        "slug": "category4",
+        "parent_id": ""
+    }
+]
