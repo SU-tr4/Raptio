@@ -76,26 +76,23 @@ require_once __DIR__ . '/includes/sidebar.php';
         $img = file_exists($theme_path . '/screenshot.png') ? '../themes/'.$theme_name.'/screenshot.png' : '../themes/'.$theme_name.'/screenshot.jpg';
         ?>
         
-        <div class="theme-card <?php echo $is_active ? 'is-active' : ''; ?>" style="border: 1px solid #ccd0d4; background:#fff; position:relative;">
-            <div class="theme-screenshot" style="position:relative; height:180px; overflow:hidden; background:#f6f7f7;">
+        <div class="theme-card <?php echo $is_active ? 'is-active' : ''; ?>">
+            <div class="theme-screenshot">
                 <img src="<?php echo $img; ?>" style="width:100%; height:100%; object-fit:cover;">
-                <div class="theme-actions" style="position:absolute; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center;">
+                <div class="theme-actions">
                     <button type="button" class="button" onclick="document.getElementById('modal-<?php echo $theme_name; ?>').style.display='flex'">テーマの詳細</button>
                 </div>
             </div>
             <div style="padding: 10px;">
                 <h3 style="font-size: 14px; margin: 0;"><?php echo htmlspecialchars($meta['name']); ?></h3>
-                <?php if ($is_active): ?><span style="color: #2271b1; font-size: 11px; font-weight: bold;">■ 有効中</span><?php endif; ?>
+                <?php if ($is_active): ?><span class="theme-active-badge">■ 有効中</span><?php endif; ?>
             </div>
-            <style>
-                .theme-card:hover .theme-actions { display: flex !important; }
-            </style>
         </div>
 
-        <div id="modal-<?php echo $theme_name; ?>" class="theme-modal-overlay" onclick="this.style.display='none'" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-            <div class="theme-modal" onclick="event.stopPropagation()" style="background: #fff; width: 800px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 5px 15px rgba(0,0,0,0.3); overflow: hidden;">
-                <div class="modal-header" style="padding: 15px 20px; border-bottom: 1px solid #dcdcde; font-size: 16px; font-weight: 600;">詳細情報: <?php echo htmlspecialchars($meta['name']); ?></div>
-                <div class="modal-body" style="padding: 20px; overflow-y: auto; flex-grow: 1; display: flex; flex-direction: row;">
+        <div id="modal-<?php echo $theme_name; ?>" class="theme-modal-overlay" onclick="this.style.display='none'" style="display:none;">
+            <div class="theme-modal" onclick="event.stopPropagation()">
+                <div class="modal-header">詳細情報: <?php echo htmlspecialchars($meta['name']); ?></div>
+                <div class="modal-body">
                     <div style="width: 300px; flex-shrink: 0;">
                         <img src="<?php echo $img; ?>" style="width: 100%; border: 1px solid #ddd;">
                     </div>
@@ -118,7 +115,7 @@ require_once __DIR__ . '/includes/sidebar.php';
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer" style="padding: 15px 20px; border-top: 1px solid #dcdcde; background: #f6f7f7; display: flex; justify-content: space-between;">
+                <div class="modal-footer">
                     <div>
                         <?php if (!$is_active): ?>
                             <form method="POST"><input type="hidden" name="active_theme" value="<?php echo htmlspecialchars($theme_name); ?>"><button type="submit" class="button button-primary">有効化</button></form>

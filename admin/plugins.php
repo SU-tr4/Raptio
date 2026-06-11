@@ -90,28 +90,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// データ同期処理
+// データ同期処理（バグ修正・自動同期強化版）
 $plugins_data = get_plugins_data();
 $plugin_dirs = array_filter(glob(PLUGINS_DIR . '/*', GLOB_ONLYDIR), 'is_dir');
 $current_folders = array_map('basename', $plugin_dirs);
 $needs_save = false;
 
+// 1. 既に削除されたプラグインフォルダをJSONから除去
 foreach ($plugins_data as $folder_name => $meta) {
-    if (!in_array($folder_name, $current_folders)) { unset($plugins_data[$folder_name]); $needs_save = true; }
+    if (!in_array($folder_name, $current_folders)) { 
+        unset($plugins_data[$folder_name]); 
+        $needs_save = true; 
+    }
 }
+
+// 2. 存在する全フォルダのメタデータをPHPファイルから常に最新化して同期
 foreach ($current_folders as $folder_name) {
-    if (!isset($plugins_data[$folder_name])) {
-        $meta = ['name' => $folder_name, 'active' => false];
-        $files = glob(PLUGINS_DIR . '/' . $folder_name . '/*.php');
-        foreach ($files as $file) {
-            $h = get_plugin_headers($file);
-            if (!empty($h)) { $meta = array_merge($meta, $h); break; }
+    // 現在の有効化状態を維持（未登録なら初期値はfalse）
+    $is_active = (bool)($plugins_data[$folder_name]['active'] ?? false);
+    
+    // ベースとなる初期メタデータ構造を定義
+    $meta = [
+        'name'        => $folder_name,
+        'active'      => $is_active,
+        'description' => '-',
+        'version'     => '-',
+        'author'      => '-'
+    ];
+
+    // フォルダ内のPHPファイルを走査してヘッダーコメントを抽出・マージ
+    $files = glob(PLUGINS_DIR . '/' . $folder_name . '/*.php');
+    foreach ($files as $file) {
+        $h = get_plugin_headers($file);
+        if (!empty($h)) { 
+            $meta = array_merge($meta, $h); 
+            break; // 有効なヘッダーを持つメインファイルが見つかればループを抜ける
         }
+    }
+
+    // JSON側の既存データに不足がある、または変更の差分がある場合のみ更新
+    if (!isset($plugins_data[$folder_name]) || $plugins_data[$folder_name] !== $meta) {
         $plugins_data[$folder_name] = $meta;
         $needs_save = true;
     }
 }
-if ($needs_save) file_put_contents(PLUGINS_JSON, json_encode($plugins_data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+
+// 差分があればJSONへ保存
+if ($needs_save) {
+    file_put_contents(PLUGINS_JSON, json_encode($plugins_data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+}
 
 // フィルター処理
 $status = $_GET['status'] ?? 'all';
@@ -132,67 +159,10 @@ require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
 ?>
 
-<style>
-    /* 全体デザイン調整 */
-    .wp-list-table { width: 100%; border-spacing: 0; background: #fff; border: 1px solid #ccd0d4; margin-top: 10px; }
-    .wp-list-table th { text-align: left; padding: 10px 15px; border-bottom: 1px solid #ccd0d4; background: #f6f7f7; font-weight: 600; }
-    .wp-list-table td { padding: 15px; border-bottom: 1px solid #eee; vertical-align: top; }
-    .plugin-title { font-weight: 600; font-size: 1.1em; color: #1d2327; }
-    
-    /* 状態表示ラベル */
-    .status-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; }
-    .status-active { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-    .status-inactive { background: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; }
-    
-    /* アクションボタン */
-    .action-btn { background: none; border: none; padding: 0; cursor: pointer; font-size: 12px; font-weight: 600; text-decoration: underline; }
-    .btn-stop { color: #d63638; }
-    .btn-activate { color: #0073aa; }
-
-    /* タイトルエリア・開閉ボタン */
-    .wp-content-title-area { display: flex; align-items: center; justify-content: flex-start; gap: 15px; margin-bottom: 20px; }
-    .toggle-btn { 
-        padding: 6px 15px; cursor: pointer; background: #f0f0f1; border: 1px solid #7e8993; border-radius: 4px; font-size: 13px; font-weight: 600;
-    }
-    .toggle-btn:hover { background: #e2e2e2; }
-    
-    /* アップロードカード */
-    .plugin-upload-card {
-        background: #fff;
-        padding: 20px;
-        border: 1px solid #ccd0d4;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        display: none;
-        margin-bottom: 20px;
-    }
-    .plugin-upload-card form { 
-        display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 10px; 
-    }
-
-    /* フィルターバー */
-    .filter-links { margin: 15px 0; font-size: 13px; }
-    .filter-links a { text-decoration: none; color: #2271b1; padding: 0 5px; }
-    .filter-links a.current { color: #000; font-weight: bold; pointer-events: none; }
-    .filter-links span { color: #999; margin-left: 3px; }
-    
-    .tablenav { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; }
-    .bulk-actions { display: flex; align-items: center; gap: 5px; }
-    .search-box { display: flex; align-items: center; }
-    
-    .tablenav select, .tablenav input[type="text"] { height: 30px; padding: 0 10px; border: 1px solid #7e8993; border-radius: 3px; box-sizing: border-box; }
-    .tablenav button { 
-        height: 30px; padding: 0 15px; cursor: pointer; border: 1px solid #7e8993; border-radius: 3px; background: #f6f7f7; 
-        display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; font-size: 13px;
-    }
-    .tablenav button:hover { background: #f0f0f1; border-color: #50575e; }
-</style>
 
 <div class="wp-content-title-area">
     <h2>プラグイン</h2>
-    <button type="button" class="toggle-btn" onclick="document.getElementById('upload-card').style.display = (document.getElementById('upload-card').style.display === 'block') ? 'none' : 'block';">
-        ＋ 新規プラグインを追加
-    </button>
+    <button type="button" class="toggle-btn" onclick="document.getElementById('upload-card').style.display = (document.getElementById('upload-card').style.display === 'block') ? 'none' : 'block';">＋ 新規プラグインを追加</button>
 </div>
 
 <div id="upload-card" class="plugin-upload-card">
@@ -210,15 +180,15 @@ require_once __DIR__ . '/includes/sidebar.php';
 
 <form method="POST">
     <div class="tablenav">
-        <div class="bulk-actions">
+        <div class="tablenav-left">
             <select name="bulk_action">
                 <option value="">一括操作</option>
                 <option value="activate">有効化</option>
                 <option value="deactivate">停止</option>
             </select>
-            <button type="submit" name="do_bulk_action" value="1">適用</button>
+            <button type="submit" name="do_bulk_action" value="1" class="button">適用</button>
         </div>
-        <div class="search-box">
+        <div class="tablenav-right">
             <input type="text" id="plugin-search" placeholder="プラグインを検索...">
         </div>
     </div>

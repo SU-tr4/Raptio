@@ -429,3 +429,299 @@ code {
     padding: 15px 20px; border-top: 1px solid #dcdcde; background: #f6f7f7; 
     display: flex; justify-content: space-between; align-items: center; 
 }
+
+/* ==========================================================================
+   tablenav（一括操作バー・フィルター・ページネーション）
+   ========================================================================== */
+.tablenav {
+    margin: 10px 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: nowrap;
+}
+.tablenav-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.tablenav-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.tablenav select {
+    width: auto !important;
+    height: 30px;
+    padding: 0 6px;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
+    font-size: 13px;
+    background: #fff;
+    color: #2c3338;
+}
+.tablenav .button,
+.tablenav button.button {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 13px;
+    background: #f6f7f7;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
+    color: #2c3338;
+    cursor: pointer;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.tablenav .button:hover,
+.tablenav button.button:hover { background: #f0f0f1; border-color: #1d2327; color: #1d2327; }
+.tablenav .button.disabled,
+.tablenav a.button.disabled { color: #a7aaad; pointer-events: none; }
+
+/* ページネーション */
+.displaying-num { font-size: 13px; color: #646970; margin-right: 4px; }
+.pagination-links { display: flex; align-items: center; gap: 4px; }
+.paging-input { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: #646970; }
+.current-page {
+    width: 46px !important;
+    height: 28px;
+    text-align: center;
+    border: 1px solid #8c8f94 !important;
+    border-radius: 3px;
+    font-size: 13px;
+    padding: 0 4px !important;
+}
+
+/* ==========================================================================
+   subsubsub（ステータスフィルターリンク）
+   ========================================================================== */
+.subsubsub {
+    list-style: none;
+    margin: 8px 0 12px;
+    padding: 0;
+    font-size: 13px;
+    color: #646970;
+    line-height: 1.8;
+}
+.subsubsub li { display: inline-block; }
+.subsubsub li a { text-decoration: none; color: #2271b1; }
+.subsubsub li a:hover { color: #135e96; }
+.subsubsub li a.current { color: #000; font-weight: 600; }
+.subsubsub .separator { color: #c3c4c7; margin: 0 4px; }
+
+/* ==========================================================================
+   wp-content-title-area 拡張（検索フォーム付き）
+   ========================================================================== */
+.wp-content-title-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+.wp-content-title-area h2 {
+    font-size: 23px;
+    font-weight: 400;
+    color: #1d2327;
+    white-space: nowrap;
+}
+.wp-content-title-area .button-primary {
+    padding: 4px 8px;
+    font-size: 12px;
+    background: #f6f7f7;
+    border: 1px solid #2271b1;
+    border-radius: 3px;
+    color: #2271b1;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.wp-content-title-area .button-primary:hover { background: #2271b1; color: #fff; }
+.wp-content-title-area .toggle-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+    background: #f6f7f7;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
+    color: #2c3338;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.wp-content-title-area .toggle-btn:hover { background: #f0f0f1; border-color: #1d2327; }
+.search-form { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.search-form .search-input {
+    width: 200px !important;
+    height: 30px;
+    padding: 4px 8px !important;
+    font-size: 13px;
+    border: 1px solid #8c8f94 !important;
+    border-radius: 3px;
+}
+.search-form .button {
+    height: 30px;
+    padding: 0 12px;
+    font-size: 13px;
+    background: #f6f7f7;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
+    color: #2c3338;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.search-form .button:hover { background: #f0f0f1; border-color: #1d2327; }
+
+/* ==========================================================================
+   投稿一覧（edit-posts）固有スタイル
+   ========================================================================== */
+.wp-list-table-container {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin-top: 5px;
+}
+.post-title-link {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2271b1;
+    text-decoration: none;
+    display: inline-block;
+    margin-bottom: 2px;
+}
+.post-title-link:hover { color: #135e96; }
+.row-actions {
+    font-size: 12px;
+    color: #a7aaad;
+    padding: 2px 0 0;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+.wp-list-table tbody tr:hover .row-actions { opacity: 1; }
+.row-actions a,
+.row-actions button {
+    background: none; border: none; padding: 0; margin: 0;
+    font-size: 12px; color: #2271b1; text-decoration: none; cursor: pointer;
+}
+.row-actions a:hover, .row-actions button:hover { color: #135e96; }
+.row-actions .trash-action { color: #b32d2e; }
+.row-actions .trash-action:hover { color: #dc3232; }
+.wp-badge-inline { font-weight: 400; color: #646970; font-size: 12px; margin-left: 4px; }
+.slug-code {
+    font-family: Consolas, Monaco, monospace;
+    background: #f6f7f7;
+    padding: 2px 5px;
+    border-radius: 3px;
+    color: #50575e;
+    border: 1px solid #dcdcde;
+    font-size: 12px;
+}
+
+/* ==========================================================================
+   プラグイン一覧（plugins）固有スタイル
+   ========================================================================== */
+.plugin-title { font-weight: 600; font-size: 14px; color: #1d2327; }
+.status-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+.status-active  { background: #ecf7ed; color: #2e7d32; border: 1px solid #c8e6c9; }
+.status-inactive{ background: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; }
+.action-btn { background: none; border: none; padding: 0; cursor: pointer; font-size: 12px; font-weight: 600; text-decoration: underline; }
+.btn-stop     { color: #d63638; }
+.btn-activate { color: #2271b1; }
+.plugin-upload-card {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    display: none;
+    margin-bottom: 20px;
+}
+.plugin-upload-card form { display: flex; align-items: center; gap: 10px; }
+.filter-links { margin: 8px 0 12px; font-size: 13px; }
+.filter-links a { text-decoration: none; color: #2271b1; padding: 0 4px; }
+.filter-links a.current { color: #000; font-weight: 600; pointer-events: none; }
+.filter-links .count { color: #646970; }
+.bulk-actions { display: flex; align-items: center; gap: 6px; }
+.search-box   { display: flex; align-items: center; }
+.search-box input[type="text"] {
+    height: 30px;
+    width: 200px !important;
+    padding: 0 8px !important;
+    border: 1px solid #8c8f94;
+    border-radius: 3px;
+    font-size: 13px;
+}
+
+/* ==========================================================================
+   設定系ページ（site-settings, categories）固有スタイル
+   ========================================================================== */
+.settings-container { max-width: 600px; }
+.settings-section { margin-top: 20px; }
+.form-table { width: 100%; border-collapse: collapse; }
+.form-table th {
+    width: 200px;
+    text-align: left;
+    padding: 15px 10px 15px 0;
+    vertical-align: top;
+    font-weight: 600;
+    font-size: 13px;
+    color: #1d2327;
+}
+.form-table td { padding: 10px 0; vertical-align: top; }
+.form-table td input[type="text"],
+.form-table td textarea { width: 100%; max-width: 400px; }
+.description { font-size: 12px; color: #646970; margin-top: 5px; }
+
+/* ==========================================================================
+   メニュー管理（site-menu）
+   ========================================================================== */
+.menu-manager-layout { display: flex; gap: 20px; align-items: flex-start; margin-top: 20px; }
+.menu-list-panel {
+    width: 250px;
+    flex-shrink: 0;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    padding: 15px;
+}
+.menu-list-panel h3 { margin-bottom: 15px; font-size: 14px; font-weight: 600; }
+.menu-list-panel ul { list-style: none; }
+.menu-list-panel li { margin-bottom: 8px; }
+.menu-list-panel li a {
+    display: block;
+    padding: 8px 12px;
+    border: 1px solid #c3c4c7;
+    background: #f6f7f7;
+    color: #3c434a;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+}
+.menu-list-panel li a.active,
+.menu-list-panel li a:hover { background: #2271b1; color: #fff; border-color: #2271b1; }
+.menu-edit-panel { flex: 1; background: #fff; border: 1px solid #c3c4c7; padding: 20px; }
+.menu-item-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+.menu-item-row input { flex: 1; padding: 6px 8px; }
+.menu-item-row button { height: 32px; padding: 0 10px; }
+.menu-locations-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.menu-location-label {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border: 1px solid #f0f0f1;
+    cursor: pointer; font-size: 13px; border-radius: 3px;
+}
+.menu-location-label:hover { background: #f6f7f7; }
+
+/* ==========================================================================
+   テーマ管理（themes）— theme-grid は admin_style.css に既存
+   ========================================================================== */
+.theme-active-badge {
+    color: #2271b1;
+    font-size: 11px;
+    font-weight: 700;
+}
