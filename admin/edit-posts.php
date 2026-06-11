@@ -96,13 +96,14 @@ if ($filter_user !== '') {
         return ($p['author'] ?? '') === $filter_user;
     });
 }
-if ($search_query !== '') {
-    $posts = array_filter($posts, function($p) use ($search_query) {
-        return mb_stripos($p['title'] ?? '', $search_query) !== false
-            || mb_stripos($p['slug']  ?? '', $search_query) !== false;
-    });
-}
 $posts = array_values($posts);
+
+// ---- 日付（date）の新しい順（降順）にソート ----
+usort($posts, function($a, $b) {
+    $dateA = $a['date'] ?? '';
+    $dateB = $b['date'] ?? '';
+    return strcmp($dateB, $dateA);
+});
 
 // ---- ページネーション ----
 $per_page    = 20;
@@ -186,7 +187,6 @@ require_once __DIR__ . '/includes/sidebar.php';
         </select>
         <button onclick="applyBulkAction()" class="button">適用</button>
 
-        <!-- 日付フィルター -->
         <select name="m" id="filter-month" onchange="applyFilters()">
             <option value="">すべての日付</option>
             <?php foreach ($month_list as $ym => $cnt):
@@ -199,7 +199,6 @@ require_once __DIR__ . '/includes/sidebar.php';
             <?php endforeach; ?>
         </select>
 
-        <!-- カテゴリーフィルター -->
         <select name="cat" id="filter-cat" onchange="applyFilters()">
             <option value="">カテゴリー一覧</option>
             <?php foreach ($all_categories as $cat): ?>
@@ -209,7 +208,6 @@ require_once __DIR__ . '/includes/sidebar.php';
             <?php endforeach; ?>
         </select>
 
-        <!-- タグフィルター -->
         <select name="tag" id="filter-tag" onchange="applyFilters()">
             <option value="">すべてのタグ</option>
             <?php foreach ($all_tags as $tag): ?>
@@ -219,7 +217,6 @@ require_once __DIR__ . '/includes/sidebar.php';
             <?php endforeach; ?>
         </select>
 
-        <!-- ユーザーフィルター -->
         <select name="author" id="filter-author" onchange="applyFilters()">
             <option value="">すべてのユーザー</option>
             <?php foreach ($all_users as $u): ?>
@@ -232,7 +229,6 @@ require_once __DIR__ . '/includes/sidebar.php';
         <button onclick="applyFilters()" class="button">絞り込み</button>
     </div>
 
-    <!-- 件数＋ページネーション -->
     <div class="tablenav-right">
         <span class="displaying-num"><?= $total_items ?>個の項目</span>
         <span class="pagination-links">

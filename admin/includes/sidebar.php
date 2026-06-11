@@ -24,6 +24,13 @@ $_admin_url    = $_admin_scheme . '://' . $_SERVER['HTTP_HOST']
                 <li><a href="<?php echo $_admin_url; ?>/categories.php" class="<?php echo ($current_page === 'posts' && $sub_page === 'categories') ? 'active' : ''; ?>">カテゴリー</a></li>
             </ul>
         </li>
+        <li>
+            <a href="<?php echo $_admin_url; ?>/edit-pages.php" class="<?php echo $current_page === 'pages' ? 'active' : ''; ?>">単独</a>
+            <ul class="wp-sidebar-submenu">
+                <li><a href="<?php echo $_admin_url; ?>/edit-pages.php" class="<?php echo ($current_page === 'pages' && $sub_page === 'list') ? 'active' : ''; ?>">単独ページ一覧</a></li>
+                <li><a href="<?php echo $_admin_url; ?>/editor.php?mode=page" class="<?php echo ($current_page === 'pages' && $sub_page === 'add') ? 'active' : ''; ?>">単独ページを追加</a></li>
+            </ul>
+        </li>
         <li><a href="<?php echo $_admin_url; ?>/media.php" class="<?php echo $current_page === 'media' ? 'active' : ''; ?>">メディア</a></li>
 
         <li>
@@ -45,28 +52,22 @@ $_admin_url    = $_admin_scheme . '://' . $_SERVER['HTTP_HOST']
         $plugin_menu_html = ob_get_clean();
 
         // href の相対パス（/ や http で始まらないもの）を正規化
-        // 例: "wp-importer-page.php" → "/raptio/admin/plugin-page.php?plugin=wp-importer"
         $plugin_menu_html = preg_replace_callback(
             '/href=["\'](?!https?:\/\/|\/|#)([^"\'?#]*)([^"\']*)["\']/',
             function ($matches) use ($_admin_url) {
-                $file  = $matches[1]; // 例: wp-importer-page.php
-                $query = $matches[2]; // 例: ?foo=bar（あれば）
-
-                // ファイル名だけ取り出す（ディレクトリ部分は捨てる）
+                $file  = $matches[1];
+                $query = $matches[2];
                 $basename = basename($file);
 
-                // すでに plugin-page.php?plugin=XXX 形式なら絶対URLに変換するだけでOK
                 if ($basename === 'plugin-page.php') {
                     return 'href="' . $_admin_url . '/plugin-page.php' . $query . '"';
                 }
 
-                // "-page.php" で終わるファイルはプラグインページとしてルーターに通す
                 if (preg_match('/^(.+)-page\.php$/', $basename, $m)) {
-                    $plugin_name = $m[1]; // wp-importer
+                    $plugin_name = $m[1];
                     return 'href="' . $_admin_url . '/plugin-page.php?plugin=' . urlencode($plugin_name) . '"';
                 }
 
-                // それ以外は admin/ 直下のファイルとして絶対パスに変換
                 return 'href="' . $_admin_url . '/' . $basename . $query . '"';
             },
             $plugin_menu_html

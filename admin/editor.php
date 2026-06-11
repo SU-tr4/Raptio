@@ -8,83 +8,99 @@ if (!isset($_SESSION['raptio_auth'])) {
     exit;
 }
 
-// カテゴリーとメディアデータの読み込み
-$categories_file = DATA_DIR . '/categories.json';
-$all_categories = file_exists($categories_file) ? json_decode(file_get_contents($categories_file), true) : [];
+// モード判定: post（投稿）/ page（単独ページ）
+$mode = $_GET['mode'] ?? 'post';
+if ($mode !== 'page') $mode = 'post';
 
-// アップロード済みメディア一覧の取得（モーダル用）
-$upload_dir = __DIR__ . '/../uploads/';
-$allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
-$media_files = [];
-if (file_exists($upload_dir)) {
-    $files = scandir($upload_dir);
-    foreach ($files as $file) {
-        if ($file !== '.' && $file !== '..') {
-            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-            if (in_array($ext, $allowed_extensions, true)) {
-                $file_path = $upload_dir . $file;
-                $media_files[] = [
-                    'name' => $file,
-                    'url'  => '../uploads/' . $file,
-                    'date' => date('Y-m-d H:i', filemtime($file_path)),
-                    'size' => round(filesize($file_path) / 1024, 1) . ' KB'
-                ];
-            }
-        }
-    }
-    usort($media_files, function($a, $b) { return strcmp($b['date'], $a['date']); });
+// カテゴリ（投稿モードのみ使用）
+$all_categories = [];
+if ($mode === 'post') {
+    $categories_file = DATA_DIR . '/categories.json';
+    $all_categories  = file_exists($categories_file) ? json_decode(file_get_contents($categories_file), true) : [];
+    if (!is_array($all_categories)) $all_categories = [];
 }
 
-$id = $_GET['id'] ?? '';
-$title = '';
-$slug = '';
-$content = '';
-$status = 'draft';
-$date = '';
+$id          = $_GET['id'] ?? '';
+$title       = '';
+$slug        = '';
+$content     = '';
+$status      = 'draft';
+$date        = '';
 $category_id = '';
-$thumbnail = '';
+$thumbnail   = '';
 
 if ($id) {
-    $index_data = json_decode(file_get_contents(INDEX_FILE), true) ?? [];
-    foreach ($index_data as $post) {
-        if ($post['id'] === $id) {
-            $title       = $post['title'];
-            $slug        = $post['slug'];
-            $status      = $post['status'];
-            $date        = $post['date'];
-            $category_id = $post['category_id'] ?? '';
-            $thumbnail   = $post['thumbnail'] ?? '';
-            $full_path   = __DIR__ . '/../' . $post['file_path'];
-            if (file_exists($full_path)) {
-                $content = file_get_contents($full_path);
+    if ($mode === 'post') {
+        $index_data = json_decode(file_exists(INDEX_FILE) ? file_get_contents(INDEX_FILE) : '[]', true) ?? [];
+        foreach ($index_data as $post) {
+            if ($post['id'] === $id) {
+                $title       = $post['title'];
+                $slug        = $post['slug'];
+                $status      = $post['status'];
+                $date        = $post['date'];
+                $category_id = $post['category_id'] ?? '';
+                $thumbnail   = $post['thumbnail'] ?? '';
+                $full_path   = POSTS_DIR . '/' . basename($post['file_path']);
+                if (!file_exists($full_path)) $full_path = __DIR__ . '/../' . $post['file_path'];
+                if (file_exists($full_path)) $content = file_get_contents($full_path);
+                break;
             }
-            break;
+        }
+    } else {
+        $pages_index = json_decode(file_exists(PAGES_INDEX_FILE) ? file_get_contents(PAGES_INDEX_FILE) : '[]', true) ?? [];
+        foreach ($pages_index as $pg) {
+            if ($pg['id'] === $id) {
+                $title     = $pg['title'];
+                $slug      = $pg['slug'];
+                $status    = $pg['status'];
+                $date      = $pg['date'];
+                $thumbnail = $pg['thumbnail'] ?? '';
+                $fp        = $pg['file_path'];
+                if (!file_exists($fp)) $fp = __DIR__ . '/../' . $pg['file_path'];
+                if (file_exists($fp)) $content = file_get_contents($fp);
+                break;
+            }
         }
     }
 }
 
-$page_title  = $id ? '投稿の編集' : '新規投稿を追加';
-$current_page = 'posts';
-$sub_page = 'add';
+// ページタイトル・サイドバー変数
+if ($mode === 'post') {
+    $page_title   = $id ? '投稿の編集' : '新規投稿を追加';
+    $current_page = 'posts';
+    $sub_page     = 'add';
+    $save_action  = 'save_post';
+    $list_page    = 'edit-posts.php';
+    $h2_label     = $id ? '投稿の編集' : '新規投稿を追加';
+} else {
+    $page_title   = $id ? '単独ページの編集' : '新規単独ページを追加';
+    $current_page = 'pages';
+    $sub_page     = 'add';
+    $save_action  = 'save_page';
+    $list_page    = 'edit-pages.php';
+    $h2_label     = $id ? '単独ページの編集' : '新規単独ページを追加';
+}
 
 require_once __DIR__ . '/includes/header.php';
 require_once __DIR__ . '/includes/sidebar.php';
 ?>
 <div class="wp-admin-header">
-    <h2><?php echo $id ? '投稿の編集' : '新規投稿を追加'; ?></h2>
+    <h2><?php echo htmlspecialchars($h2_label, ENT_QUOTES, 'UTF-8'); ?></h2>
 </div>
 
 <form id="editorForm">
-    <input type="hidden" name="action" value="save">
-    <input type="hidden" name="id" value="<?php echo htmlspecialchars($id, ENT_QUOTES, 'UTF-8'); ?>">
+    <input type="hidden" name="action" value="<?php echo $save_action; ?>">
+    <input type="hidden" name="id"     value="<?php echo htmlspecialchars($id, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php if ($date): ?>
+        <input type="hidden" name="date" value="<?php echo htmlspecialchars($date, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php endif; ?>
 
     <div class="editor-layout">
         <div class="editor-left">
             <div class="form-group-title">
-                <input type="text" name="title" value="<?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?>" placeholder="タイトルを追加" required class="editor-title-input">
+                <input type="text" name="title" value="<?php echo htmlspecialchars($title, ENT_QUOTES, 'UTF-8'); ?>" placeholder="タイトルを追加" class="editor-title-input">
             </div>
 
-            <!-- エディタモード切り替えタブ -->
             <div class="editor-mode-bar">
                 <div class="editor-mode-tabs">
                     <button type="button" class="editor-mode-tab active" data-mode="markdown" onclick="switchEditorMode('markdown')">
@@ -99,7 +115,6 @@ require_once __DIR__ . '/includes/sidebar.php';
                 <span class="editor-mode-notice" id="editorModeNotice"></span>
             </div>
 
-            <!-- マークダウンエディタ -->
             <div id="markdownEditorWrap" class="form-group-content editor-pane active">
                 <div class="editor-toolbar" id="markdownToolbar">
                     <div class="toolbar-group">
@@ -131,10 +146,9 @@ require_once __DIR__ . '/includes/sidebar.php';
                         <button type="button" class="toolbar-btn" title="水平線" onclick="mdInsert('hr')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
                     </div>
                 </div>
-                <textarea id="markdownTextarea" name="content" placeholder="ここに文章を入力してください（マークダウン対応）" required class="editor-textarea"><?php echo htmlspecialchars($content, ENT_QUOTES, 'UTF-8'); ?></textarea>
+                <textarea id="markdownTextarea" name="content" placeholder="ここに文章を入力してください（マークダウン対応）" class="editor-textarea"><?php echo htmlspecialchars($content, ENT_QUOTES, 'UTF-8'); ?></textarea>
             </div>
 
-            <!-- リッチテキストエディタ -->
             <div id="richtextEditorWrap" class="form-group-content editor-pane" style="display:none;">
                 <div class="editor-toolbar" id="richtextToolbar">
                     <div class="toolbar-group">
@@ -157,14 +171,14 @@ require_once __DIR__ . '/includes/sidebar.php';
                     </div>
                     <div class="toolbar-sep"></div>
                     <div class="toolbar-group">
-                        <button type="button" class="toolbar-btn" title="左揃え" onclick="rtExec('justifyLeft')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="左揃え"   onclick="rtExec('justifyLeft')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="15" y2="12"/><line x1="3" y1="18" x2="18" y2="18"/></svg></button>
                         <button type="button" class="toolbar-btn" title="中央揃え" onclick="rtExec('justifyCenter')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg></button>
-                        <button type="button" class="toolbar-btn" title="右揃え" onclick="rtExec('justifyRight')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="右揃え"   onclick="rtExec('justifyRight')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="6" y1="18" x2="21" y2="18"/></svg></button>
                     </div>
                     <div class="toolbar-sep"></div>
                     <div class="toolbar-group">
-                        <button type="button" class="toolbar-btn" title="箇条書き" onclick="rtExec('insertUnorderedList')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg></button>
-                        <button type="button" class="toolbar-btn" title="番号リスト" onclick="rtExec('insertOrderedList')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="箇条書き"    onclick="rtExec('insertUnorderedList')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1" fill="currentColor"/><circle cx="4" cy="12" r="1" fill="currentColor"/><circle cx="4" cy="18" r="1" fill="currentColor"/></svg></button>
+                        <button type="button" class="toolbar-btn" title="番号リスト"  onclick="rtExec('insertOrderedList')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button>
                         <button type="button" class="toolbar-btn" title="インデント増" onclick="rtExec('indent')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/><path d="M7 12l4 4 4-4"/><line x1="11" y1="8" x2="11" y2="16"/></svg></button>
                         <button type="button" class="toolbar-btn" title="インデント減" onclick="rtExec('outdent')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/><path d="M7 8l4 4-4 4"/><line x1="11" y1="8" x2="11" y2="16"/></svg></button>
                     </div>
@@ -191,10 +205,11 @@ require_once __DIR__ . '/includes/sidebar.php';
                     <div class="form-group">
                         <label for="status">ステータス</label>
                         <select id="status" name="status">
-                            <option value="draft" <?php echo $status === 'draft' ? 'selected' : ''; ?>>下書き</option>
+                            <option value="draft"  <?php echo $status === 'draft'  ? 'selected' : ''; ?>>下書き</option>
                             <option value="public" <?php echo $status === 'public' ? 'selected' : ''; ?>>公開</option>
                         </select>
                     </div>
+                    <?php if ($mode === 'post'): ?>
                     <div class="form-group">
                         <label for="category_id">カテゴリー</label>
                         <select id="category_id" name="category_id">
@@ -206,9 +221,10 @@ require_once __DIR__ . '/includes/sidebar.php';
                             <?php endforeach; ?>
                         </select>
                     </div>
+                    <?php endif; ?>
                     <div class="form-group">
                         <label for="slug">スラッグ</label>
-                        <input type="text" id="slug" name="slug" value="<?php echo htmlspecialchars($slug, ENT_QUOTES, 'UTF-8'); ?>" placeholder="post-slug" required>
+                        <input type="text" id="slug" name="slug" value="<?php echo htmlspecialchars($slug, ENT_QUOTES, 'UTF-8'); ?>" placeholder="<?php echo $mode === 'post' ? 'post-slug' : 'page-slug'; ?>">
                     </div>
                 </div>
             </div>
@@ -235,11 +251,7 @@ require_once __DIR__ . '/includes/sidebar.php';
                         <button type="button" class="button button-secondary thumb-select-btn" onclick="openMediaModal()">
                             <?php echo $thumbnail ? '画像を変更' : 'アイキャッチ画像を設定'; ?>
                         </button>
-                        <?php if ($thumbnail): ?>
-                            <button type="button" class="button-link-delete" id="thumb-remove-link" onclick="removeThumbnail()">アイキャッチ画像を削除</button>
-                        <?php else: ?>
-                            <button type="button" class="button-link-delete" id="thumb-remove-link" onclick="removeThumbnail()" style="display:none;">アイキャッチ画像を削除</button>
-                        <?php endif; ?>
+                        <button type="button" class="button-link-delete" id="thumb-remove-link" onclick="removeThumbnail()" <?php echo $thumbnail ? '' : 'style="display:none;"'; ?>>アイキャッチ画像を削除</button>
                     </div>
                 </div>
             </div>
@@ -253,7 +265,6 @@ require_once __DIR__ . '/includes/sidebar.php';
 
 <div id="media-modal-overlay" class="media-modal-overlay" onclick="closeMediaModalOnOverlay(event)">
     <div class="media-modal">
-
         <div class="media-modal-header">
             <div class="media-modal-tabs">
                 <button type="button" class="media-tab active" data-tab="upload" onclick="switchTab('upload')">ファイルをアップロード</button>
@@ -284,24 +295,9 @@ require_once __DIR__ . '/includes/sidebar.php';
                 <input type="text" id="library-search" class="library-search-input" placeholder="ファイル名で検索..." oninput="filterLibrary(this.value)">
                 <span id="library-count" class="library-count"></span>
             </div>
-            <div id="library-grid" class="library-grid">
-                <?php if (empty($media_files)): ?>
-                    <div class="library-empty">まだ画像がアップロードされていません。</div>
-                <?php else: ?>
-                    <?php foreach ($media_files as $item): ?>
-                        <div class="library-item"
-                             data-url="<?php echo htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8'); ?>"
-                             data-name="<?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>"
-                             data-size="<?php echo htmlspecialchars($item['size'], ENT_QUOTES, 'UTF-8'); ?>"
-                             onclick="selectLibraryItem(this)">
-                            <div class="library-item-img-wrap">
-                                <img src="<?php echo htmlspecialchars($item['url'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy">
-                                <div class="library-item-check"><svg viewBox="0 0 12 10" width="12" height="10"><polyline points="1,5 4.5,9 11,1" stroke="#fff" stroke-width="2" fill="none"/></svg></div>
-                            </div>
-                            <p class="library-item-name"><?php echo htmlspecialchars($item['name'], ENT_QUOTES, 'UTF-8'); ?></p>
-                        </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+            <div id="library-grid" class="library-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:8px; padding:12px; max-height:360px; overflow-y:auto;">
+                <div class="library-loading" id="library-loading" style="display:none; grid-column:1/-1; text-align:center; padding:40px; color:#646970;">読み込み中...</div>
+                <div class="library-empty"  id="library-empty"   style="display:none; grid-column:1/-1; text-align:center; padding:40px; color:#646970;">まだ画像がアップロードされていません。</div>
             </div>
         </div>
 
@@ -323,6 +319,18 @@ function escHtml(str) {
     return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// パス補完ユーティリティ（APIから返ってくるURLをクリーンアップして管理画面用/保存用に仕分ける）
+function resolveImageUrl(url) {
+    if (!url) return '';
+    // もしすでに管理画面用の相対表記になっている場合は、重複しないように一旦クリーンアップ
+    let cleanPath = url;
+    if (cleanPath.indexOf('../') === 0) {
+        cleanPath = cleanPath.substring(3);
+    }
+    // ドキュメントルートからの絶対パスなどの場合は調整してください
+    return cleanPath;
+}
+
 // ============================================================
 // サムネイル関連
 // ============================================================
@@ -342,10 +350,13 @@ function removeThumbnail() {
 }
 
 function applyThumbnail(url, isDataUrl) {
-    document.getElementById('thumbnail-input').value = isDataUrl ? '' : url.replace('../', '');
+    const cleanUrl = isDataUrl ? url : resolveImageUrl(url);
+    document.getElementById('thumbnail-input').value = isDataUrl ? '' : cleanUrl;
+    
+    const displayUrl = isDataUrl ? url : '../' + cleanUrl;
     const preview = document.getElementById('thumb-preview');
     preview.classList.add('has-image');
-    preview.innerHTML = `<img src="${url}" alt="アイキャッチ画像"><button type="button" class="thumb-remove-btn" onclick="removeThumbnail()" title="削除">&times;</button>`;
+    preview.innerHTML = `<img src="${displayUrl}" alt="アイキャッチ画像"><button type="button" class="thumb-remove-btn" onclick="removeThumbnail()" title="削除">&times;</button>`;
     const btn = document.querySelector('.thumb-select-btn');
     if (btn) btn.textContent = '画像を変更';
     const removeLink = document.getElementById('thumb-remove-link');
@@ -356,17 +367,22 @@ function applyThumbnail(url, isDataUrl) {
 // メディアモーダル
 // ============================================================
 let selectedLibraryItem = null;
-let pendingUploadFile  = null;
-// リッチテキストから画像/リンク挿入時に使うコールバック
-let _rtMediaCallback = null;
+let pendingUploadFile   = null;
+let _rtMediaCallback    = null;
+let _libraryLoaded      = false;
 
 function openMediaModal(callback) {
     selectedLibraryItem = null;
     pendingUploadFile   = null;
-    _rtMediaCallback = callback || null;
+    _rtMediaCallback    = callback || null;
     updateFooter();
     document.getElementById('media-modal-overlay').classList.add('active');
     document.body.style.overflow = 'hidden';
+    // ライブラリタブに切り替わっているときは即ロード、そうでなければ初回タブ切替時にロード
+    const activeTab = document.querySelector('.media-tab.active');
+    if (activeTab && activeTab.dataset.tab === 'library') {
+        loadLibrary();
+    }
 }
 
 function closeMediaModal() {
@@ -374,14 +390,13 @@ function closeMediaModal() {
     document.body.style.overflow = '';
     selectedLibraryItem = null;
     pendingUploadFile   = null;
-    _rtMediaCallback = null;
+    _rtMediaCallback    = null;
 }
 
 function closeMediaModalOnOverlay(e) {
     if (e.target === document.getElementById('media-modal-overlay')) closeMediaModal();
 }
 
-// タブ切り替え
 function switchTab(tab) {
     document.querySelectorAll('.media-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.media-tab-content').forEach(t => t.classList.remove('active'));
@@ -390,19 +405,94 @@ function switchTab(tab) {
     selectedLibraryItem = null;
     pendingUploadFile   = null;
     updateFooter();
+    if (tab === 'library') loadLibrary();
+}
+
+// ライブラリ遅延ロード（モーダルを開いたときに初めて取得）
+function loadLibrary() {
+    if (_libraryLoaded) return;
+    const loading = document.getElementById('library-loading');
+    const empty   = document.getElementById('library-empty');
+    const grid    = document.getElementById('library-grid');
+    loading.style.display = '';
+    empty.style.display   = 'none';
+
+    fetch('api.php?action=get_media')
+        .then(r => r.json())
+        .then(files => {
+            loading.style.display = 'none';
+            // 既存アイテム（loadingとempty以外）を削除
+            grid.querySelectorAll('.library-item').forEach(el => el.remove());
+            if (!Array.isArray(files) || files.length === 0) {
+                empty.style.display = '';
+            } else {
+                files.forEach(item => {
+                    const cleanUrl = resolveImageUrl(item.url);
+                    const el = document.createElement('div');
+                    el.className    = 'library-item';
+                    el.dataset.url  = cleanUrl;
+                    el.dataset.name = item.name;
+                    el.dataset.size = item.size || '';
+                    el.onclick = function() { selectLibraryItem(this); };
+                    el.innerHTML = `
+                        <div class="library-item-img-wrap" style="position:relative; width:80px; height:80px; margin:0 auto;">
+                            <img src="../${cleanUrl}" alt="${escHtml(item.name)}" loading="lazy" style="width:80px; height:80px; object-fit:cover; border-radius:3px; border:2px solid transparent; display:block;">
+                            <div class="library-item-check" style="display:none; position:absolute; top:2px; right:2px; background:#2271b1; border-radius:50%; width:18px; height:18px; align-items:center; justify-content:center;"><svg viewBox="0 0 12 10" width="10" height="10"><polyline points="1,5 4.5,9 11,1" stroke="#fff" stroke-width="2" fill="none"/></svg></div>
+                        </div>
+                        <p class="library-item-name" style="font-size:10px; text-align:center; margin:4px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80px;">${escHtml(item.name)}</p>`;
+                    grid.appendChild(el);
+                });
+            }
+            _libraryLoaded = true;
+        })
+        .catch(() => {
+            loading.style.display = 'none';
+            empty.style.display   = '';
+            empty.textContent     = '読み込みに失敗しました。';
+        });
+}
+
+// ライブラリにアイテムを追加（アップロード後）
+function addToLibraryGrid(url, name, size) {
+    _libraryLoaded = false; // 次回再取得させる（または直接追加）
+    const grid    = document.getElementById('library-grid');
+    const emptyEl = document.getElementById('library-empty');
+    if (emptyEl) emptyEl.style.display = 'none';
+
+    const cleanUrl = resolveImageUrl(url);
+    const el = document.createElement('div');
+    el.className    = 'library-item';
+    el.dataset.url  = cleanUrl;
+    el.dataset.name = name;
+    el.dataset.size = size || '';
+    el.onclick = function() { selectLibraryItem(this); };
+    el.innerHTML = `
+        <div class="library-item-img-wrap" style="position:relative; width:80px; height:80px; margin:0 auto;">
+            <img src="../${cleanUrl}" alt="${escHtml(name)}" loading="lazy" style="width:80px; height:80px; object-fit:cover; border-radius:3px; border:2px solid transparent; display:block;">
+            <div class="library-item-check" style="display:none; position:absolute; top:2px; right:2px; background:#2271b1; border-radius:50%; width:18px; height:18px; align-items:center; justify-content:center;"><svg viewBox="0 0 12 10" width="10" height="10"><polyline points="1,5 4.5,9 11,1" stroke="#fff" stroke-width="2" fill="none"/></svg></div>
+        </div>
+        <p class="library-item-name" style="font-size:10px; text-align:center; margin:4px 0 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80px;">${escHtml(name)}</p>`;
+    grid.prepend(el);
+    _libraryLoaded = true;
 }
 
 // ライブラリ：アイテム選択
 function selectLibraryItem(el) {
-    document.querySelectorAll('.library-item').forEach(i => i.classList.remove('selected'));
-    el.classList.add('selected');
+    document.querySelectorAll('#library-grid .library-item').forEach(i => {
+        i.querySelector('img').style.border = '2px solid transparent';
+        const chk = i.querySelector('.library-item-check');
+        if (chk) chk.style.display = 'none';
+    });
+    el.querySelector('img').style.border = '2px solid #2271b1';
+    const chk = el.querySelector('.library-item-check');
+    if (chk) chk.style.display = 'flex';
     selectedLibraryItem = { url: el.dataset.url, name: el.dataset.name, size: el.dataset.size };
     updateFooter();
 }
 
 // ライブラリ検索フィルター
 function filterLibrary(q) {
-    const items = document.querySelectorAll('.library-item');
+    const items = document.querySelectorAll('#library-grid .library-item');
     const lower = q.toLowerCase();
     let visible = 0;
     items.forEach(item => {
@@ -452,30 +542,29 @@ async function uploadAndApply(file) {
     const dropzone  = document.getElementById('upload-dropzone');
     const uploading = document.getElementById('dropzone-uploading');
     const inner     = dropzone.querySelector('.dropzone-inner');
-    inner.style.display       = 'none';
+    inner.style.display     = 'none';
     uploading.style.display = 'flex';
 
     const formData = new FormData();
-    formData.append('async_upload', file);
+    formData.append('action', 'upload_media');
+    formData.append('file', file);
 
     try {
-        const res = await fetch('api.php?action=upload_media', { method: 'POST', body: formData });
+        const res  = await fetch('api.php', { method: 'POST', body: formData });
         const data = await res.json();
         if (data.success && data.url) {
+            const cleanUrl = resolveImageUrl(data.url);
             if (_rtMediaCallback) {
-                _rtMediaCallback('../' + data.url);
+                _rtMediaCallback(cleanUrl);
             } else {
-                applyThumbnail('../' + data.url, false);
+                applyThumbnail(cleanUrl, false);
             }
-            addToLibraryGrid(data.url, data.name, data.size);
+            addToLibraryGrid(cleanUrl, data.name || file.name, data.size || '');
         } else {
             const reader = new FileReader();
             reader.onload = e => {
-                if (_rtMediaCallback) {
-                    _rtMediaCallback(e.target.result);
-                } else {
-                    applyThumbnail(e.target.result, true);
-                }
+                if (_rtMediaCallback) _rtMediaCallback(e.target.result);
+                else applyThumbnail(e.target.result, true);
             };
             reader.readAsDataURL(file);
             if (!_rtMediaCallback) assignFileToHiddenInput(file);
@@ -483,17 +572,14 @@ async function uploadAndApply(file) {
     } catch {
         const reader = new FileReader();
         reader.onload = e => {
-            if (_rtMediaCallback) {
-                _rtMediaCallback(e.target.result);
-            } else {
-                applyThumbnail(e.target.result, true);
-            }
+            if (_rtMediaCallback) _rtMediaCallback(e.target.result);
+            else applyThumbnail(e.target.result, true);
         };
         reader.readAsDataURL(file);
         if (!_rtMediaCallback) assignFileToHiddenInput(file);
     }
 
-    inner.style.display       = '';
+    inner.style.display     = '';
     uploading.style.display = 'none';
     closeMediaModal();
 }
@@ -504,26 +590,6 @@ function assignFileToHiddenInput(file) {
         dt.items.add(file);
         document.getElementById('thumb_file').files = dt.files;
     } catch(e) {}
-}
-
-function addToLibraryGrid(url, name, size) {
-    const grid = document.getElementById('library-grid');
-    const emptyEl = grid.querySelector('.library-empty');
-    if (emptyEl) emptyEl.remove();
-
-    const el = document.createElement('div');
-    el.className   = 'library-item';
-    el.dataset.url  = '../' + url;
-    el.dataset.name = name;
-    el.dataset.size = size;
-    el.onclick = function() { selectLibraryItem(this); };
-    el.innerHTML = `
-        <div class="library-item-img-wrap">
-            <img src="../${url}" alt="${name}" loading="lazy">
-            <div class="library-item-check"><svg viewBox="0 0 12 10" width="12" height="10"><polyline points="1,5 4.5,9 11,1" stroke="#fff" stroke-width="2" fill="none"/></svg></div>
-        </div>
-        <p class="library-item-name">${name}</p>`;
-    grid.prepend(el);
 }
 
 // ============================================================
@@ -591,331 +657,127 @@ document.addEventListener('keydown', e => {
 // ============================================================
 let currentEditorMode = 'markdown';
 
-// ----------------------------------------------------------------
-// Markdown → HTML
-// ----------------------------------------------------------------
 function markdownToHtml(md) {
     if (!md || !md.trim()) return '<p><br></p>';
 
-    // コードブロックを先に退避（内部をエスケープして保護）
+    // コードブロックを退避
     const codeBlocks = [];
-    md = md.replace(/^```(\w*)\n?([\s\S]*?)^```/gm, (_, lang, code) => {
-        codeBlocks.push(`<pre><code>${escHtml(code.replace(/\n$/, ''))}</code></pre>`);
-        return `\x00CB${codeBlocks.length - 1}\x00`;
+    md = md.replace(/```[\s\S]*?```/g, match => {
+        codeBlocks.push(match);
+        return `\x00CODE${codeBlocks.length - 1}\x00`;
     });
 
-    // インラインコードを退避
-    const inlineCodes = [];
-    md = md.replace(/`([^`\n]+)`/g, (_, c) => {
-        inlineCodes.push(`<code>${escHtml(c)}</code>`);
-        return `\x00IC${inlineCodes.length - 1}\x00`;
+    let html = md
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/^#{6}\s(.+)$/gm,'<h6>$1</h6>')
+        .replace(/^#{5}\s(.+)$/gm,'<h5>$1</h5>')
+        .replace(/^#{4}\s(.+)$/gm,'<h4>$1</h4>')
+        .replace(/^#{3}\s(.+)$/gm,'<h3>$1</h3>')
+        .replace(/^#{2}\s(.+)$/gm,'<h2>$1</h2>')
+        .replace(/^#\s(.+)$/gm,'<h1>$1</h1>')
+        .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,'<em>$1</em>')
+        .replace(/~~(.+?)~~/g,'<del>$1</del>')
+        .replace(/`(.+?)`/g,'<code>$1</code>')
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, src) => {
+            // エディタ内プレビュー表示用。外部URLでなければ ../ を付与して表示させる
+            const displaySrc = (src.indexOf('http') === 0 || src.indexOf('data:') === 0) ? src : '../' + resolveImageUrl(src);
+            return `<img src="${displaySrc}" data-saved-src="${src}" alt="${alt}">`;
+        })
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>')
+        .replace(/^---$/gm,'<hr>')
+        .replace(/\n/g,'<br>');
+
+    // コードブロックを復元
+    codeBlocks.forEach((block, i) => {
+        const code = block.replace(/^```[^\n]*\n?/, '').replace(/```$/, '');
+        html = html.replace(`\x00CODE${i}\x00`, `<pre><code>${escHtml(code.trim())}</code></pre>`);
     });
 
-    // 空行で段落を分割
-    const blocks = md.split(/\n{2,}/);
-    const htmlParts = blocks.map(block => {
-        const trimmed = block.trim();
-        if (!trimmed) return '';
-
-        // コードブロックプレースホルダー
-        if (/^\x00CB\d+\x00$/.test(trimmed)) return trimmed;
-
-        // 見出し
-        const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
-        if (heading) {
-            const level = heading[1].length;
-            return `<h${level}>${inlineToHtml(heading[2], inlineCodes)}</h${level}>`;
-        }
-
-        // 水平線
-        if (/^[-*_]{3,}$/.test(trimmed)) return '<hr>';
-
-        // 引用ブロック
-        if (/^>/.test(trimmed)) {
-            const content = trimmed.split('\n').map(l => l.replace(/^>\s?/, '')).join('\n');
-            return `<blockquote>${inlineToHtml(content, inlineCodes)}</blockquote>`;
-        }
-
-        // 順序ありリスト
-        if (/^\d+\.\s/.test(trimmed)) {
-            const items = trimmed.split('\n')
-                .filter(l => /^\d+\.\s/.test(l))
-                .map(l => `<li>${inlineToHtml(l.replace(/^\d+\.\s+/, ''), inlineCodes)}</li>`)
-                .join('');
-            return `<ol>${items}</ol>`;
-        }
-
-        // 順序なしリスト
-        if (/^[-*+]\s/.test(trimmed)) {
-            const items = trimmed.split('\n')
-                .filter(l => /^[-*+]\s/.test(l))
-                .map(l => `<li>${inlineToHtml(l.replace(/^[-*+]\s+/, ''), inlineCodes)}</li>`)
-                .join('');
-            return `<ul>${items}</ul>`;
-        }
-
-        // 段落（単一行の場合はbrなし、複数行はbr区切り）
-        const lines = trimmed.split('\n');
-        const content = lines.map(l => inlineToHtml(l, inlineCodes)).join('<br>');
-        return `<p>${content}</p>`;
-    });
-
-    let html = htmlParts.join('\n');
-
-    // プレースホルダーを戻す
-    html = html.replace(/\x00CB(\d+)\x00/g, (_, i) => codeBlocks[+i]);
-    html = html.replace(/\x00IC(\d+)\x00/g, (_, i) => inlineCodes[+i]);
-
-    return html || '<p><br></p>';
+    return html;
 }
 
-// インライン要素の変換
-function inlineToHtml(text, inlineCodes) {
-    // インラインコードプレースホルダーはそのまま通す
-    // 画像（リンクより先）
-    text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
-    // リンク
-    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
-    // 太字+斜体
-    text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    // 太字
-    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
-    // 斜体
-    text = text.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
-    text = text.replace(/(?<!_)_(?!_)(.+?)(?<!_)_(?!_)/g, '<em>$1</em>');
-    // 取り消し線
-    text = text.replace(/~~(.+?)~~/g, '<del>$1</del>');
-    // インラインコード戻し
-    if (inlineCodes) {
-        text = text.replace(/\x00IC(\d+)\x00/g, (_, i) => inlineCodes[+i]);
-    }
-    return text;
-}
-
-// ----------------------------------------------------------------
-// HTML → Markdown（execCommandが生成する汚いHTMLを完全に正規化）
-// ----------------------------------------------------------------
 function htmlToMarkdown(html) {
-    if (!html || !html.trim()) return '';
-
-    const div = document.createElement('div');
-    div.innerHTML = html;
-
-    // Step1: DOMを正規化（execCommandが挿入するゴミ属性・タグを整理）
-    normalizeEditableHtml(div);
-
-    // Step2: DOM → Markdown テキスト変換
-    const md = domToMarkdown(div).trim();
-    // 3連続以上の空行を2行に
-    return md.replace(/\n{3,}/g, '\n\n');
-}
-
-// execCommand由来のゴミHTML正規化
-function normalizeEditableHtml(root) {
-    // style付きspanをアンラップ or セマンティックタグに変換
-    root.querySelectorAll('span').forEach(el => {
-        const style = el.getAttribute('style') || '';
-        const fw = el.style.fontWeight;
-        const fs = el.style.fontStyle;
-        const td = el.style.textDecoration;
-
-        if (fw === 'bold' || fw === '700' || parseInt(fw) >= 700) {
-            const strong = document.createElement('strong');
-            while (el.firstChild) strong.appendChild(el.firstChild);
-            el.parentNode.replaceChild(strong, el);
-        } else if (fs === 'italic') {
-            const em = document.createElement('em');
-            while (el.firstChild) em.appendChild(el.firstChild);
-            el.parentNode.replaceChild(em, el);
-        } else if (td === 'line-through') {
-            const del = document.createElement('del');
-            while (el.firstChild) del.appendChild(el.firstChild);
-            el.parentNode.replaceChild(del, el);
-        } else if (td === 'underline') {
-            const u = document.createElement('u');
-            while (el.firstChild) u.appendChild(el.firstChild);
-            el.parentNode.replaceChild(u, el);
-        } else {
-            // 装飾なしspanはアンラップ
-            const frag = document.createDocumentFragment();
-            while (el.firstChild) frag.appendChild(el.firstChild);
-            el.parentNode.replaceChild(frag, el);
-        }
-    });
-
-    // <font>タグをアンラップ
-    root.querySelectorAll('font').forEach(el => {
-        const frag = document.createDocumentFragment();
-        while (el.firstChild) frag.appendChild(el.firstChild);
-        el.parentNode.replaceChild(frag, el);
-    });
-
-    // styleのあるb/i/strong/emはそのままにして属性だけ削除
-    root.querySelectorAll('b,i,strong,em,del,s,u,a,h1,h2,h3,h4,h5,h6,p,li,ul,ol,blockquote,pre,code').forEach(el => {
-        // href以外のstyle属性を削除
-        if (el.tagName.toLowerCase() !== 'a') {
-            el.removeAttribute('style');
-        }
-        el.removeAttribute('class');
-        el.removeAttribute('id');
-    });
-}
-
-// DOM → Markdown 再帰変換
-function domToMarkdown(node, ctx) {
-    ctx = ctx || { listDepth: 0 };
-
-    if (node.nodeType === Node.TEXT_NODE) {
-        return node.textContent;
-    }
-    if (node.nodeType !== Node.ELEMENT_NODE) return '';
-
-    const tag = node.tagName.toLowerCase();
-
-    // 子ノードを再帰変換するヘルパー
-    const innerMd = (extraCtx) => {
-        const c = Object.assign({}, ctx, extraCtx || {});
-        return Array.from(node.childNodes).map(n => domToMarkdown(n, c)).join('');
-    };
-
-    switch (tag) {
-        case 'h1': return `# ${innerMd().trim()}\n\n`;
-        case 'h2': return `## ${innerMd().trim()}\n\n`;
-        case 'h3': return `### ${innerMd().trim()}\n\n`;
-        case 'h4': return `#### ${innerMd().trim()}\n\n`;
-        case 'h5': return `##### ${innerMd().trim()}\n\n`;
-        case 'h6': return `###### ${innerMd().trim()}\n\n`;
-
-        case 'strong': case 'b': {
-            const t = innerMd().trim();
-            return t ? `**${t}**` : '';
-        }
-        case 'em': case 'i': {
-            const t = innerMd().trim();
-            return t ? `*${t}*` : '';
-        }
-        case 'del': case 's': case 'strike': {
-            const t = innerMd().trim();
-            return t ? `~~${t}~~` : '';
-        }
-        case 'u': return innerMd(); // mdに相当なし、テキストとして保持
-
-        case 'a': {
-            const href = node.getAttribute('href') || '';
-            const text = innerMd().trim();
-            return text ? `[${text}](${href})` : href;
-        }
-        case 'img': {
-            const src = node.getAttribute('src') || '';
-            const alt = node.getAttribute('alt') || '';
-            return `![${alt}](${src})`;
-        }
-
-        case 'code': {
-            // preの中のcodeはpreで処理する
-            if (node.parentElement && node.parentElement.tagName.toLowerCase() === 'pre') {
-                return node.textContent;
+    return html
+        .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n')
+        .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n')
+        .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n')
+        .replace(/<h4[^>]*>(.*?)<\/h4>/gi, '#### $1\n')
+        .replace(/<pre[^>]*><code[^>]*>([\s\S]*?)<\/code><\/pre>/gi, (m, c) => '```\n' + c.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>') + '\n```\n')
+        .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+        .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+        .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+        .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+        .replace(/<del[^>]*>(.*?)<\/del>/gi, '~~$1~~')
+        .replace(/<code[^>]*>(.*?)<\/code>/gi, '`$1`')
+        .replace(/<a[^>]+href="([^"]+)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
+        .replace(/<img[^>]+src="([^"]+)"[^>]*>/gi, (match) => {
+            // リッチテキストからマークダウンに戻す際、data-saved-src属性があればそちら（純粋なuploads/パス）を優先
+            const savedSrcMatch = match.match(/data-saved-src="([^"]+)"/i);
+            const srcMatch = match.match(/src="([^"]+)"/i);
+            const altMatch = match.match(/alt="([^"]*)"/i);
+            
+            let src = savedSrcMatch ? savedSrcMatch[1] : (srcMatch ? srcMatch[1] : '');
+            let alt = altMatch ? altMatch[1] : '';
+            
+            // もしsrcに管理画面用相対パスが入っていたら除去してクリーンにする
+            if (src.indexOf('../') === 0 && src.indexOf('data:') !== 0) {
+                src = src.substring(3);
             }
-            return `\`${node.textContent}\``;
-        }
-        case 'pre': {
-            const codeEl = node.querySelector('code');
-            const codeText = (codeEl ? codeEl.textContent : node.textContent);
-            return `\`\`\`\n${codeText}\n\`\`\`\n\n`;
-        }
-
-        case 'blockquote': {
-            const content = innerMd().trim();
-            return content.split('\n').map(l => `> ${l}`).join('\n') + '\n\n';
-        }
-
-        case 'ul': {
-            const items = Array.from(node.childNodes)
-                .filter(n => n.nodeType === Node.ELEMENT_NODE && n.tagName.toLowerCase() === 'li')
-                .map(li => {
-                    const text = domToMarkdown(li, ctx).trim();
-                    return `- ${text}`;
-                }).join('\n');
-            return items ? items + '\n\n' : '';
-        }
-        case 'ol': {
-            const items = Array.from(node.childNodes)
-                .filter(n => n.nodeType === Node.ELEMENT_NODE && n.tagName.toLowerCase() === 'li')
-                .map((li, idx) => {
-                    const text = domToMarkdown(li, ctx).trim();
-                    return `${idx + 1}. ${text}`;
-                }).join('\n');
-            return items ? items + '\n\n' : '';
-        }
-        case 'li': return innerMd();
-
-        case 'br': {
-            // ブロック要素の末尾brは無視、それ以外は改行
-            return '\n';
-        }
-        case 'hr': return '\n---\n\n';
-
-        case 'p': {
-            const content = innerMd().trim();
-            if (!content) return '';
-            return content + '\n\n';
-        }
-        case 'div': {
-            const content = innerMd().trim();
-            if (!content) return '';
-            return content + '\n\n';
-        }
-
-        default:
-            return innerMd();
-    }
+            return `![${alt}](${src})`;
+        })
+        .replace(/<hr[^>]*>/gi, '\n---\n')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/?p[^>]*>/gi, '\n')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ')
+        .replace(/\n{3,}/g, '\n\n').trim();
 }
 
 function switchEditorMode(mode) {
-    if (mode === currentEditorMode) return;
-
     const mdWrap = document.getElementById('markdownEditorWrap');
     const rtWrap = document.getElementById('richtextEditorWrap');
-    const mdTextarea = document.getElementById('markdownTextarea');
-    const rtArea = document.getElementById('richtextArea');
-    const tabs = document.querySelectorAll('.editor-mode-tab');
     const notice = document.getElementById('editorModeNotice');
 
+    if (mode === currentEditorMode) return;
+
     if (mode === 'richtext') {
-        rtArea.innerHTML = markdownToHtml(mdTextarea.value);
+        const md = document.getElementById('markdownTextarea').value;
+        document.getElementById('richtextArea').innerHTML = markdownToHtml(md);
         mdWrap.style.display = 'none';
         rtWrap.style.display = '';
-        notice.textContent = '※ リッチテキストで編集中。保存時にMarkdownへ変換されます。';
+        notice.textContent = 'リッチテキストモード（保存時にMarkdownへ変換されます）';
     } else {
-        mdTextarea.value = htmlToMarkdown(rtArea.innerHTML);
+        const html = document.getElementById('richtextArea').innerHTML;
+        document.getElementById('markdownTextarea').value = htmlToMarkdown(html);
         rtWrap.style.display = 'none';
         mdWrap.style.display = '';
         notice.textContent = '';
     }
 
-    tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    document.querySelectorAll('.editor-mode-tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.mode === mode);
+    });
     currentEditorMode = mode;
 }
 
 // ============================================================
-// Markdownエディタ ツールバー操作
+// Markdownツールバー操作
 // ============================================================
-function mdInsert(action) {
-    const ta = document.getElementById('markdownTextarea');
+function mdInsert(type) {
+    const ta    = document.getElementById('markdownTextarea');
     const start = ta.selectionStart;
-    const end = ta.selectionEnd;
+    const end   = ta.selectionEnd;
     const selected = ta.value.substring(start, end);
     let before = '', after = '', defaultText = '';
-    let cursorOffset = null;
 
-    switch (action) {
-        case 'heading1':    before = '# ';    defaultText = '見出し1'; break;
-        case 'heading2':    before = '## ';   defaultText = '見出し2'; break;
-        case 'heading3':    before = '### ';  defaultText = '見出し3'; break;
-        case 'bold':        before = '**'; after = '**'; defaultText = '太字テキスト'; break;
-        case 'italic':      before = '*';  after = '*';  defaultText = '斜体テキスト'; break;
-        case 'strike':      before = '~~'; after = '~~'; defaultText = '取り消し線'; break;
+    switch (type) {
+        case 'heading1':    before = '# ';   after = '';   defaultText = '見出し1'; break;
+        case 'heading2':    before = '## ';  after = '';   defaultText = '見出し2'; break;
+        case 'heading3':    before = '### '; after = '';   defaultText = '見出し3'; break;
+        case 'bold':        before = '**';   after = '**'; defaultText = '太字'; break;
+        case 'italic':      before = '*';    after = '*';  defaultText = '斜体'; break;
+        case 'strike':      before = '~~';   after = '~~'; defaultText = '取り消し線'; break;
         case 'link': {
             const url = prompt('URLを入力してください:', 'https://');
             if (!url) return;
@@ -926,12 +788,14 @@ function mdInsert(action) {
             return;
         }
         case 'image': {
-            const url = prompt('画像URLを入力してください:', 'https://');
-            if (!url) return;
-            const alt = selected || '画像';
-            const insertion = `![${alt}](${url})`;
-            ta.setRangeText(insertion, start, end, 'end');
-            ta.focus();
+            // 手動入力からメディアモーダル連動へアップグレード
+            openMediaModal(function(url) {
+                const cleanUrl = resolveImageUrl(url);
+                const alt = selected || '画像';
+                const insertion = `![${alt}](${cleanUrl})`;
+                ta.setRangeText(insertion, start, end, 'end');
+                ta.focus();
+            });
             return;
         }
         case 'ul': {
@@ -952,7 +816,7 @@ function mdInsert(action) {
             ta.focus();
             return;
         }
-        case 'code':        before = '`';  after = '`';  defaultText = 'code'; break;
+        case 'code':        before = '`';    after = '`';      defaultText = 'code'; break;
         case 'codeblock':   before = '```\n'; after = '\n```'; defaultText = 'コードをここに'; break;
         case 'hr': {
             ta.setRangeText('\n\n---\n\n', start, end, 'end');
@@ -964,8 +828,6 @@ function mdInsert(action) {
     const text = selected || defaultText;
     const insertion = before + text + after;
     ta.setRangeText(insertion, start, end, 'select');
-
-    // 選択状態を挿入テキストのみに
     if (!selected) {
         ta.setSelectionRange(start + before.length, start + before.length + text.length);
     }
@@ -1010,7 +872,6 @@ function rtInsertLink() {
 }
 
 function rtInsertImage() {
-    // savedSelectionを保持してからモーダルを開く
     const sel = window.getSelection();
     let savedRange = null;
     if (sel && sel.rangeCount > 0) {
@@ -1024,7 +885,13 @@ function rtInsertImage() {
             sel2.removeAllRanges();
             sel2.addRange(savedRange);
         }
-        document.execCommand('insertImage', false, url);
+        
+        const cleanUrl = resolveImageUrl(url);
+        const displaySrc = (cleanUrl.indexOf('http') === 0 || cleanUrl.indexOf('data:') === 0) ? cleanUrl : '../' + cleanUrl;
+        
+        // 純粋なエディタコマンドでの挿入ではなく、属性をコントロールできるHTML挿入にすることでリンク切れを防ぎます
+        const imgHtml = `<img src="${displaySrc}" data-saved-src="${cleanUrl}" alt="画像">`;
+        document.execCommand('insertHTML', false, imgHtml);
     });
 }
 
@@ -1039,27 +906,48 @@ document.getElementById('richtextArea').addEventListener('keydown', function(e) 
 });
 
 // ============================================================
-// フォーム送信（モード問わず content を同期）
+// フォーム送信
 // ============================================================
 document.getElementById('editorForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
-    // リッチテキストモードの場合、送信前に HTML→MD 変換して textarea に反映
+    // JSバリデーション
+    const title = document.querySelector('input[name="title"]').value.trim();
+    const slug  = document.getElementById('slug').value.trim();
+    if (!title) { alert('タイトルを入力してください。'); return; }
+    if (!slug)  { alert('スラッグを入力してください。'); return; }
+
+    // リッチテキストモードのとき textarea に反映
     if (currentEditorMode === 'richtext') {
-        const rtArea = document.getElementById('richtextArea');
+        const rtArea     = document.getElementById('richtextArea');
         const mdTextarea = document.getElementById('markdownTextarea');
         mdTextarea.value = htmlToMarkdown(rtArea.innerHTML);
     }
 
+    const btn = document.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+
     const formData = new FormData(this);
     fetch('api.php', { method: 'POST', body: formData })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        })
         .then(data => {
-            if (data.success) { 
-                alert('保存しました'); 
-                window.location.href = 'edit-posts.php'; 
+            if (data.success) {
+                alert('保存しました');
+                window.location.href = '<?php echo $list_page; ?>';
+            } else {
+                alert('エラー: ' + (data.message || data.error || '不明なエラー'));
+                btn.disabled = false;
+                btn.textContent = '公開・保存';
             }
-            else { alert('エラー: ' + (data.error || '不明なエラー')); }
+        })
+        .catch(err => {
+            alert('通信エラーが発生しました。\n' + err.message);
+            btn.disabled = false;
+            btn.textContent = '公開・保存';
         });
 });
 </script>

@@ -47,6 +47,10 @@ if (!isset($_SESSION['raptio_auth'])) {
 // アクションの取得
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
+// ============================================================
+// 投稿 (Post) アクション
+// ============================================================
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_post') {
     $id = $_POST['id'] ?? '';
     $title = trim($_POST['title'] ?? '');
@@ -120,14 +124,12 @@ if ($action === 'delete') {
     json_response(['success' => true]);
 }
 
-// 【新規追加】ゴミ箱へ移動
 if ($action === 'trash') {
     $id = $_POST['id'] ?? '';
     $index_data = json_decode(file_exists(INDEX_FILE) ? file_get_contents(INDEX_FILE) : '[]', true);
     foreach ($index_data as &$p) {
         if ($p['id'] === $id) {
             $p['status'] = 'trash';
-            // 実ファイル（Markdown）のステータスも書き換える
             if (file_exists($p['file_path'])) {
                 $content = file_get_contents($p['file_path']);
                 $content = preg_replace('/^status:\s*".*?"/m', 'status: "trash"', $content);
@@ -140,14 +142,12 @@ if ($action === 'trash') {
     json_response(['success' => true]);
 }
 
-// 【新規追加】ゴミ箱から復元（一律下書きとして復元）
 if ($action === 'restore') {
     $id = $_POST['id'] ?? '';
     $index_data = json_decode(file_exists(INDEX_FILE) ? file_get_contents(INDEX_FILE) : '[]', true);
     foreach ($index_data as &$p) {
         if ($p['id'] === $id) {
             $p['status'] = 'draft';
-            // 実ファイル（Markdown）のステータスも書き換える
             if (file_exists($p['file_path'])) {
                 $content = file_get_contents($p['file_path']);
                 $content = preg_replace('/^status:\s*".*?"/m', 'status: "draft"', $content);
@@ -160,7 +160,6 @@ if ($action === 'restore') {
     json_response(['success' => true]);
 }
 
-// 【新規追加】完全に削除（物理削除）
 if ($action === 'delete_permanently') {
     $id = $_POST['id'] ?? '';
     $index_data = json_decode(file_exists(INDEX_FILE) ? file_get_contents(INDEX_FILE) : '[]', true);
@@ -178,7 +177,6 @@ if ($action === 'delete_permanently') {
     json_response(['success' => true]);
 }
 
-// 【新規追加】一括・ゴミ箱へ移動
 if ($action === 'bulk_trash') {
     $ids = json_decode($_POST['ids'] ?? '[]', true);
     if (!is_array($ids)) json_response(['success' => false, 'message' => 'Invalid IDs']);
@@ -198,7 +196,6 @@ if ($action === 'bulk_trash') {
     json_response(['success' => true]);
 }
 
-// 【新規追加】一括・復元
 if ($action === 'bulk_restore') {
     $ids = json_decode($_POST['ids'] ?? '[]', true);
     if (!is_array($ids)) json_response(['success' => false, 'message' => 'Invalid IDs']);
@@ -218,7 +215,6 @@ if ($action === 'bulk_restore') {
     json_response(['success' => true]);
 }
 
-// 【新規追加】一括・完全に削除
 if ($action === 'bulk_delete_permanently') {
     $ids = json_decode($_POST['ids'] ?? '[]', true);
     if (!is_array($ids)) json_response(['success' => false, 'message' => 'Invalid IDs']);
@@ -238,6 +234,191 @@ if ($action === 'bulk_delete_permanently') {
     json_response(['success' => true]);
 }
 
+// ============================================================
+// 単独ページ (Page) アクション
+// ============================================================
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_page') {
+    $id        = $_POST['id'] ?? '';
+    $title     = trim($_POST['title'] ?? '');
+    $slug      = trim($_POST['slug'] ?? '');
+    $content   = $_POST['content'] ?? '';
+    $thumbnail = $_POST['thumbnail'] ?? '';
+    $is_new    = empty($id);
+
+    if (empty($title)) json_response(['success' => false, 'message' => 'タイトルを入力してください。']);
+    if (empty($slug))  json_response(['success' => false, 'message' => 'スラッグを入力してください。']);
+    if (!preg_match('/^[a-zA-Z0-9\-_#]+$/', $slug)) json_response(['success' => false, 'message' => 'スラッグは半角英数字、ハイフン、アンダースコアのみ使用できます。']);
+
+    // スラッグの重複チェック（自分以外）
+    $pages_index = file_exists(PAGES_INDEX_FILE) ? json_decode(file_get_contents(PAGES_INDEX_FILE), true) : [];
+    foreach ($pages_index as $pg) {
+        if ($pg['slug'] === $slug && $pg['id'] !== $id) {
+            json_response(['success' => false, 'message' => 'このスラッグはすでに使用されています。']);
+        }
+    }
+
+    if ($is_new) {
+        $id        = 'page_' . uniqid();
+        $file_name = $id . '.md';
+    } else {
+        $file_name = '';
+        foreach ($pages_index as $pg) {
+            if ($pg['id'] === $id) { $file_name = basename($pg['file_path']); break; }
+        }
+        if (empty($file_name)) $file_name = $id . '.md';
+    }
+
+    $file_path = PAGES_DIR . '/' . $file_name;
+    if (!is_dir(PAGES_DIR)) @mkdir(PAGES_DIR, 0755, true);
+
+    $fm_status = $_POST['status'] ?? 'draft';
+    $fm_date   = $is_new ? date('Y-m-d H:i:s') : ($_POST['date'] ?? date('Y-m-d H:i:s'));
+
+    $md_content  = "---\n";
+    $md_content .= "id: \"{$id}\"\n";
+    $md_content .= "title: " . json_encode($title, JSON_UNESCAPED_UNICODE) . "\n";
+    $md_content .= "slug: " . json_encode($slug, JSON_UNESCAPED_UNICODE) . "\n";
+    $md_content .= "date: \"{$fm_date}\"\n";
+    $md_content .= "status: \"{$fm_status}\"\n";
+    $md_content .= "thumbnail: \"{$thumbnail}\"\n";
+    $md_content .= "type: \"page\"\n";
+    $md_content .= "---\n\n";
+    $md_content .= $content;
+
+    file_put_contents($file_path, $md_content);
+
+    // インデックスの更新
+    $page_meta = [
+        'id'        => $id,
+        'slug'      => $slug,
+        'title'     => $title,
+        'date'      => $is_new ? date('Y-m-d H:i:s') : ($_POST['date'] ?? date('Y-m-d H:i:s')),
+        'status'    => $fm_status,
+        'thumbnail' => $thumbnail,
+        'file_path' => $file_path,
+        'type'      => 'page',
+    ];
+
+    if ($is_new) {
+        $pages_index[] = $page_meta;
+    } else {
+        foreach ($pages_index as &$pg) {
+            if ($pg['id'] === $id) { $pg = array_merge($pg, $page_meta); break; }
+        }
+    }
+
+    file_put_contents(PAGES_INDEX_FILE, json_encode($pages_index, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    json_response(['success' => true, 'id' => $id]);
+}
+
+if ($action === 'trash_page') {
+    $id          = $_POST['id'] ?? '';
+    $pages_index = json_decode(file_exists(PAGES_INDEX_FILE) ? file_get_contents(PAGES_INDEX_FILE) : '[]', true);
+    foreach ($pages_index as &$pg) {
+        if ($pg['id'] === $id) {
+            $pg['status'] = 'trash';
+            if (file_exists($pg['file_path'])) {
+                $c = file_get_contents($pg['file_path']);
+                $c = preg_replace('/^status:\s*".*?"/m', 'status: "trash"', $c);
+                file_put_contents($pg['file_path'], $c);
+            }
+            break;
+        }
+    }
+    file_put_contents(PAGES_INDEX_FILE, json_encode($pages_index, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    json_response(['success' => true]);
+}
+
+if ($action === 'restore_page') {
+    $id          = $_POST['id'] ?? '';
+    $pages_index = json_decode(file_exists(PAGES_INDEX_FILE) ? file_get_contents(PAGES_INDEX_FILE) : '[]', true);
+    foreach ($pages_index as &$pg) {
+        if ($pg['id'] === $id) {
+            $pg['status'] = 'draft';
+            if (file_exists($pg['file_path'])) {
+                $c = file_get_contents($pg['file_path']);
+                $c = preg_replace('/^status:\s*".*?"/m', 'status: "draft"', $c);
+                file_put_contents($pg['file_path'], $c);
+            }
+            break;
+        }
+    }
+    file_put_contents(PAGES_INDEX_FILE, json_encode($pages_index, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    json_response(['success' => true]);
+}
+
+if ($action === 'delete_page_permanently') {
+    $id          = $_POST['id'] ?? '';
+    $pages_index = json_decode(file_exists(PAGES_INDEX_FILE) ? file_get_contents(PAGES_INDEX_FILE) : '[]', true);
+    $filtered    = [];
+    foreach ($pages_index as $pg) {
+        if ($pg['id'] === $id) {
+            if (file_exists($pg['file_path'])) @unlink($pg['file_path']);
+        } else {
+            $filtered[] = $pg;
+        }
+    }
+    file_put_contents(PAGES_INDEX_FILE, json_encode($filtered, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    json_response(['success' => true]);
+}
+
+if ($action === 'bulk_trash_page') {
+    $ids         = json_decode($_POST['ids'] ?? '[]', true);
+    if (!is_array($ids)) json_response(['success' => false, 'message' => 'Invalid IDs']);
+    $pages_index = json_decode(file_exists(PAGES_INDEX_FILE) ? file_get_contents(PAGES_INDEX_FILE) : '[]', true);
+    foreach ($pages_index as &$pg) {
+        if (in_array($pg['id'], $ids)) {
+            $pg['status'] = 'trash';
+            if (file_exists($pg['file_path'])) {
+                $c = file_get_contents($pg['file_path']);
+                $c = preg_replace('/^status:\s*".*?"/m', 'status: "trash"', $c);
+                file_put_contents($pg['file_path'], $c);
+            }
+        }
+    }
+    file_put_contents(PAGES_INDEX_FILE, json_encode($pages_index, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    json_response(['success' => true]);
+}
+
+if ($action === 'bulk_restore_page') {
+    $ids         = json_decode($_POST['ids'] ?? '[]', true);
+    if (!is_array($ids)) json_response(['success' => false, 'message' => 'Invalid IDs']);
+    $pages_index = json_decode(file_exists(PAGES_INDEX_FILE) ? file_get_contents(PAGES_INDEX_FILE) : '[]', true);
+    foreach ($pages_index as &$pg) {
+        if (in_array($pg['id'], $ids)) {
+            $pg['status'] = 'draft';
+            if (file_exists($pg['file_path'])) {
+                $c = file_get_contents($pg['file_path']);
+                $c = preg_replace('/^status:\s*".*?"/m', 'status: "draft"', $c);
+                file_put_contents($pg['file_path'], $c);
+            }
+        }
+    }
+    file_put_contents(PAGES_INDEX_FILE, json_encode($pages_index, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    json_response(['success' => true]);
+}
+
+if ($action === 'bulk_delete_page_permanently') {
+    $ids         = json_decode($_POST['ids'] ?? '[]', true);
+    if (!is_array($ids)) json_response(['success' => false, 'message' => 'Invalid IDs']);
+    $pages_index = json_decode(file_exists(PAGES_INDEX_FILE) ? file_get_contents(PAGES_INDEX_FILE) : '[]', true);
+    $filtered    = [];
+    foreach ($pages_index as $pg) {
+        if (in_array($pg['id'], $ids)) {
+            if (file_exists($pg['file_path'])) @unlink($pg['file_path']);
+        } else {
+            $filtered[] = $pg;
+        }
+    }
+    file_put_contents(PAGES_INDEX_FILE, json_encode($filtered, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    json_response(['success' => true]);
+}
+
+// ============================================================
+// カテゴリ・メディア・設定 アクション（変更なし）
+// ============================================================
+
 // カテゴリ一覧取得
 if ($action === 'get_categories') {
     $categories = json_decode(file_exists(CATEGORY_FILE) ? file_get_contents(CATEGORY_FILE) : '[]', true);
@@ -251,7 +432,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_category') {
     $slug = trim($_POST['slug'] ?? '');
     
     if (empty($name)) json_response(['success' => false, 'message' => 'カテゴリ名を入力してください。']);
-    if (empty($slug)) $slug = wp_importer_slugify($name); // 簡易フォールバック用
+    if (empty($slug)) $slug = wp_importer_slugify($name);
     
     $categories = json_decode(file_exists(CATEGORY_FILE) ? file_get_contents(CATEGORY_FILE) : '[]', true);
     
@@ -307,18 +488,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'upload_media') {
 // メディア一覧
 if ($action === 'get_media') {
     $upload_dir = dirname(DATA_DIR) . '/uploads';
+    $allowed_ext = ['jpg','jpeg','png','gif','webp','svg'];
     $files = [];
     if (is_dir($upload_dir)) {
-        $dir = opendir($upload_dir);
-        while (($file = readdir($dir)) !== false) {
-            if ($file !== '.' && $file !== '..' && !is_dir($upload_dir . '/' . $file)) {
-                $files[] = ['url' => 'uploads/' . $file, 'name' => $file];
-            }
+        foreach (scandir($upload_dir) as $file) {
+            if ($file === '.' || $file === '..') continue;
+            $fp  = $upload_dir . '/' . $file;
+            if (is_dir($fp)) continue;
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowed_ext, true)) continue;
+            $files[] = [
+                'url'  => 'uploads/' . $file,
+                'name' => $file,
+                'date' => date('Y-m-d H:i', filemtime($fp)),
+                'size' => round(filesize($fp) / 1024, 1) . ' KB',
+            ];
         }
-        closedir($dir);
     }
-    // 新しい順にソート
-    usort($files, function($a, $b) { return strcmp($b['name'], $a['name']); });
+    usort($files, function($a, $b) { return strcmp($b['date'], $a['date']); });
     json_response($files);
 }
 
