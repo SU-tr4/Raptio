@@ -4,7 +4,7 @@ require_once __DIR__ . '/auth.php';
 if (!check_raptio_auth()) { header('Location: index.php'); exit; }
 
 $page_title = 'カスタム投稿タイプ設定';
-$current_page = 'cpt';
+$current_page = 'cpt_settings';
 $sub_page = 'settings';
 
 require_once __DIR__ . '/includes/header.php';

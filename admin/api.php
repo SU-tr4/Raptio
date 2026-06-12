@@ -107,9 +107,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_post') {
     $fm_date = $is_new ? date('Y-m-d H:i:s') : ($_POST['date'] ?? date('Y-m-d H:i:s'));
     $fm_cat = $_POST['category_id'] ?? '';
     
+    // 本文にFront Matterが混入していたら除去
+    $body = ltrim($content);
+    if (str_starts_with($body, '---')) {
+        $body = preg_replace('/^---[\s\S]*?---\s*/m', '', $body, 1);
+    }
+
     $md_content = "---\n";
     $md_content .= "id: \"{$id}\"\n";
-    $md_content .= "type: \"{$type}\"\n"; // タイプを保持
+    $md_content .= "type: \"{$type}\"\n";
     $md_content .= "title: " . json_encode($title, JSON_UNESCAPED_UNICODE) . "\n";
     $md_content .= "slug: " . json_encode($slug, JSON_UNESCAPED_UNICODE) . "\n";
     $md_content .= "date: \"{$fm_date}\"\n";
@@ -117,12 +123,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_post') {
     $md_content .= "category: \"{$fm_cat}\"\n";
     $md_content .= "thumbnail: \"{$thumbnail}\"\n";
     $md_content .= "---\n\n";
-    $md_content .= $content;
+    $md_content .= $body;
     
     file_put_contents($file_path, $md_content);
     
-    // インデックスの更新
-    $post_meta = ['id' => $id, 'type' => $type, 'slug' => $slug, 'title' => $title, 'date' => $fm_date, 'status' => $fm_status, 'category_id' => $fm_cat, 'thumbnail' => $thumbnail, 'file_path' => $file_path];
+    // インデックスの更新（file_pathはDATA_DIRの親からの相対パスで保存）
+    $site_root = dirname(DATA_DIR);
+    $relative_path = ltrim(str_replace(str_replace('\\', '/', $site_root), '', str_replace('\\', '/', $file_path)), '/');
+    $post_meta = ['id' => $id, 'type' => $type, 'slug' => $slug, 'title' => $title, 'date' => $fm_date, 'status' => $fm_status, 'category_id' => $fm_cat, 'thumbnail' => $thumbnail, 'file_path' => $relative_path];
     
     if ($is_new) {
         $index_data[] = $post_meta;
@@ -314,6 +322,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_page') {
     $fm_status = $_POST['status'] ?? 'draft';
     $fm_date = $is_new ? date('Y-m-d H:i:s') : ($_POST['date'] ?? date('Y-m-d H:i:s'));
 
+    // 本文にFront Matterが混入していたら除去
+    $body = ltrim($content);
+    if (str_starts_with($body, '---')) {
+        $body = preg_replace('/^---[\s\S]*?---\s*/m', '', $body, 1);
+    }
+
     $md_content = "---\n";
     $md_content .= "id: \"{$id}\"\n";
     $md_content .= "title: " . json_encode($title, JSON_UNESCAPED_UNICODE) . "\n";
@@ -323,7 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_page') {
     $md_content .= "thumbnail: \"{$thumbnail}\"\n";
     $md_content .= "type: \"page\"\n";
     $md_content .= "---\n\n";
-    $md_content .= $content;
+    $md_content .= $body;
 
     file_put_contents($file_path, $md_content);
 
@@ -334,7 +348,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_page') {
         'date' => $fm_date,
         'status' => $fm_status,
         'thumbnail' => $thumbnail,
-        'file_path' => $file_path,
+        'file_path' => ltrim(str_replace(str_replace('\\', '/', dirname(DATA_DIR)), '', str_replace('\\', '/', $file_path)), '/'),
         'type' => 'page',
     ];
 
@@ -565,6 +579,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'delete_cpt_settings') 
         unset($cpt_data[$slug]);
         file_put_contents(CPT_CONFIG_FILE, json_encode($cpt_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     }
+    json_response(['success' => true]);
+}
+
+// ============================================================
+// メニュー アクション
+// ============================================================
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_menus') {
+    $config_data = file_exists(CONFIG_FILE) ? json_decode(file_get_contents(CONFIG_FILE), true) : [];
+    if (!is_array($config_data)) $config_data = [];
+
+    $posted_groups = $_POST['menu_groups'] ?? [];
+    if (!isset($config_data['menus'])) $config_data['menus'] = [];
+
+    foreach ($posted_groups as $gid => $group) {
+        $name = trim($group['name'] ?? '');
+        if (empty($name)) continue;
+
+        $items = [];
+        foreach ($group['items'] ?? [] as $item) {
+            $label = trim($item['label'] ?? '');
+            $url   = trim($item['url'] ?? '');
+            if ($label !== '' || $url !== '') {
+                $items[] = ['label' => $label, 'url' => $url];
+            }
+        }
+
+        $config_data['menus'][$gid] = [
+            'name'  => $name,
+            'items' => $items,
+        ];
+    }
+
+    $all_positions = ['header','header_mobile','header_mobile_btn','footer','footer_mobile_btn','mobile_slide'];
+    $active_gid = $_POST['active_gid'] ?? '';
+
+    // [] (配列) で保存されていた場合も {} (連想配列) に強制修正
+    if (!isset($config_data['menu_locations']) || !is_array($config_data['menu_locations']) || array_values($config_data['menu_locations']) === $config_data['menu_locations']) {
+        $config_data['menu_locations'] = (object)[];
+    }
+    $config_data['menu_locations'] = (array)$config_data['menu_locations'];
+
+    foreach ($all_positions as $pos) {
+        if (isset($config_data['menu_locations'][$pos]) && $config_data['menu_locations'][$pos] === $active_gid) {
+            unset($config_data['menu_locations'][$pos]);
+        }
+    }
+    foreach ($_POST['menu_locations'] ?? [] as $pos => $gid) {
+        if (in_array($pos, $all_positions, true)) {
+            $config_data['menu_locations'][$pos] = $gid;
+        }
+    }
+
+    file_put_contents(CONFIG_FILE, json_encode($config_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    json_response(['success' => true]);
+}
+
+// ============================================================
+// ウィジェット アクション
+// ============================================================
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_widgets') {
+    $config_data = file_exists(CONFIG_FILE) ? json_decode(file_get_contents(CONFIG_FILE), true) : [];
+    if (!is_array($config_data)) $config_data = [];
+
+    $posted_widgets = $_POST['widgets'] ?? [];
+    $cleaned = [];
+
+    foreach ($posted_widgets as $area_id => $items) {
+        if (!is_array($items)) continue;
+        $cleaned[$area_id] = [];
+        foreach ($items as $item) {
+            if (empty($item['type'])) continue;
+            $cleaned[$area_id][] = $item;
+        }
+    }
+
+    $config_data['widgets'] = $cleaned;
+    file_put_contents(CONFIG_FILE, json_encode($config_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     json_response(['success' => true]);
 }
 

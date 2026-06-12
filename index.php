@@ -9,6 +9,7 @@
 
 // 定数定義
 define('INDEX_FILE', __DIR__ . '/data/posts_index.json');
+define('PAGES_INDEX_FILE', __DIR__ . '/data/pages_index.json');
 define('CONFIG_FILE', __DIR__ . '/data/site_config.json');
 define('CATEGORIES_FILE', __DIR__ . '/data/categories.json');
 define('INCLUDES_DIR', __DIR__ . '/includes');
@@ -61,10 +62,44 @@ $slug = preg_replace('/[^a-zA-Z0-9\-_]/', '', $slug);
 
 if ($slug) {
     $post_meta = null;
+
+    // 1. 通常投稿から検索
     foreach ($posts as $post) {
         if ($post['slug'] === $slug) {
             $post_meta = $post;
             break;
+        }
+    }
+
+    // 2. 単独ページから検索
+    if (!$post_meta) {
+        $pages_raw = file_exists(PAGES_INDEX_FILE) ? json_decode(file_get_contents(PAGES_INDEX_FILE), true) : [];
+        $pages_all = is_array($pages_raw) ? $pages_raw : [];
+        foreach ($pages_all as $page) {
+            if ($page['slug'] === $slug) {
+                $post_meta = $page;
+                break;
+            }
+        }
+    }
+
+    // 3. カスタム投稿タイプから検索
+    if (!$post_meta) {
+        $cpt_config_file = __DIR__ . '/data/cpt_config.json';
+        $cpt_config = file_exists($cpt_config_file) ? json_decode(file_get_contents($cpt_config_file), true) : [];
+        if (is_array($cpt_config)) {
+            foreach (array_keys($cpt_config) as $cpt_type) {
+                $cpt_index_file = __DIR__ . "/data/posts_{$cpt_type}_index.json";
+                if (!file_exists($cpt_index_file)) continue;
+                $cpt_posts = json_decode(file_get_contents($cpt_index_file), true);
+                if (!is_array($cpt_posts)) continue;
+                foreach ($cpt_posts as $cpt_post) {
+                    if ($cpt_post['slug'] === $slug) {
+                        $post_meta = $cpt_post;
+                        break 2;
+                    }
+                }
+            }
         }
     }
 
@@ -74,11 +109,29 @@ if ($slug) {
         exit;
     }
 
-    $file_path = __DIR__ . '/' . $post_meta['file_path'];
+    // file_pathの正規化: Windowsパス・絶対パス・相対パス全対応
+    $raw_path = str_replace('\\', '/', $post_meta['file_path']);
+    if (preg_match('/^[A-Za-z]:\//', $raw_path)) {
+        // Windowsの絶対パス(C:/xampp/...) → SITE_ROOTを基準に data/ 以降を抽出して再構築
+        $data_pos = strpos($raw_path, '/data/');
+        $file_path = $data_pos !== false
+            ? __DIR__ . substr($raw_path, $data_pos)
+            : $raw_path;
+    } elseif (str_starts_with($raw_path, '/')) {
+        // Linuxの絶対パス
+        $file_path = $raw_path;
+    } else {
+        // 相対パス
+        $file_path = __DIR__ . '/' . $raw_path;
+    }
     $content = "記事本文のファイルが見つかりません。";
     
     if (file_exists($file_path)) {
         $markdown_raw = file_get_contents($file_path);
+        // Front Matter (--- ... ---) を除去
+        if (str_starts_with(ltrim($markdown_raw), '---')) {
+            $markdown_raw = preg_replace('/^---[\s\S]*?---\s*/m', '', ltrim($markdown_raw), 1);
+        }
         if (file_exists(INCLUDES_DIR . '/Parsedown.php')) {
             require_once INCLUDES_DIR . '/Parsedown.php';
             $parsedown = new Parsedown();
