@@ -8,6 +8,8 @@ define('INDEX_FILE', DATA_DIR . '/posts_index.json');
 define('PAGES_DIR', DATA_DIR . '/pages');
 define('PAGES_INDEX_FILE', DATA_DIR . '/pages_index.json');
 define('CONFIG_FILE', DATA_DIR . '/site_config.json');
+define('CATEGORY_FILE', DATA_DIR . '/categories.json');
+define('CPT_CONFIG_FILE', DATA_DIR . '/cpt_config.json');
 define('PLUGINS_DIR', realpath(__DIR__ . '/../plugins'));
 define('PLUGINS_JSON', DATA_DIR . '/plugins.json');
 
@@ -24,6 +26,7 @@ if (!is_dir(PLUGINS_DIR)) mkdir(PLUGINS_DIR, 0755, true);
 if (!file_exists(INDEX_FILE)) file_put_contents(INDEX_FILE, json_encode([]));
 if (!file_exists(PAGES_INDEX_FILE)) file_put_contents(PAGES_INDEX_FILE, json_encode([]));
 if (!file_exists(PLUGINS_JSON)) file_put_contents(PLUGINS_JSON, json_encode([]));
+if (!file_exists(CPT_CONFIG_FILE)) file_put_contents(CPT_CONFIG_FILE, json_encode([]));
 
 // 4. フックAPIの読み込み
 require_once __DIR__ . '/includes/plugin-api.php';

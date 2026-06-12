@@ -56,6 +56,13 @@ body {
 .brand-area {
     display: flex;
     align-items: center;
+    height: 100%;
+}
+
+.brand-area > a {
+    display: flex;
+    align-items: center;
+    height: 100%;
 }
 
 .admin-logo {
@@ -69,6 +76,82 @@ body {
     font-weight: bold;
     letter-spacing: 0.5px;
     margin-left: 10px;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-left: 30px;
+    height: 100%;
+}
+
+.header-dropdown {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.dropdown-toggle {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 0 8px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-toggle:hover {
+    color: #72aee6;
+}
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #101416;
+    border: 1px solid #2c3338;
+    list-style: none;
+    padding: 5px 0;
+    width: 150px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    z-index: 9999;
+}
+
+.header-dropdown:hover .dropdown-menu {
+    display: block;
+}
+
+.dropdown-menu li a {
+    display: block;
+    padding: 8px 15px;
+    color: #c3c4c7;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.dropdown-menu li a:hover {
+    background: #2c3338;
+    color: #fff;
+}
+
+.site-preview-btn {
+    display: flex;
+    align-items: center;
+    color: #fff;
+    text-decoration: none;
+    font-size: 13px;
+    height: 100%;
+}
+
+.site-preview-btn:hover {
+    color: #72aee6;
 }
 
 .wp-admin-header-bar .user-info {
@@ -123,11 +206,20 @@ body {
     border-left-color: #72aee6;
 }
 
+/* サイドバー・アコーディオン */
 .wp-sidebar-submenu {
     list-style: none;
     padding: 0;
     margin: 0;
     background: #2c3338;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.has-submenu.open .wp-sidebar-submenu {
+    max-height: 300px;
+    transition: max-height 0.3s ease-in;
 }
 
 .wp-sidebar-submenu li a {
@@ -142,7 +234,6 @@ body {
     color: #00a0d2;
 }
 
-/* 修正：サブメニューのアクティブ時の背景色を指定 */
 .wp-sidebar-submenu li a.active {
     color: #fff;
     font-weight: 600;
@@ -179,7 +270,6 @@ body {
     color: #1d2327;
 }
 
-/* ダッシュボード用ウィジェットグリッド */
 .dashboard-widgets {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -187,7 +277,6 @@ body {
     margin-bottom: 20px;
 }
 
-/* ダッシュボードカード共通スタイル */
 .settings-card {
     background: #fff;
     border: 1px solid var(--wp-border);
@@ -625,6 +714,33 @@ code {
     font-size: 12px;
 }
 
+/* ==========================================================================
+   サイドバー開閉用スタイル
+   ========================================================================== */
+
+/* 親メニューの見た目 */
+.wp-sidebar-menu .has-submenu > a {
+    cursor: pointer;
+    display: block;
+    text-decoration: none;
+    position: relative;
+}
+
+/* サブメニューの基本構造（初期状態） */
+.wp-sidebar-menu .wp-sidebar-submenu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out; /* ヌルヌル動かす設定 */
+    list-style: none;
+    padding-left: 20px;
+    margin: 0;
+}
+
+/* openクラスがある場合に高さを展開 */
+.wp-sidebar-menu .has-submenu.open .wp-sidebar-submenu {
+    max-height: 500px; /* 十分な高さを確保（子メニューの数に合わせて調整） */
+    transition: max-height 0.3s ease-in;
+}
 /* ==========================================================================
    プラグイン一覧（plugins）固有スタイル
    ========================================================================== */

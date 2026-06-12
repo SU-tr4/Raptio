@@ -8,11 +8,31 @@ if (!check_raptio_auth()) {
     exit;
 }
 
-$page_title = '投稿一覧';
-$current_page = 'posts';
-$sub_page = 'list';
+// カスタム投稿タイプの判定
+$post_type = $_GET['type'] ?? '';
+$is_cpt = $post_type !== '' && $post_type !== 'post';
 
-$index_data = file_exists(INDEX_FILE) ? json_decode(file_get_contents(INDEX_FILE), true) : [];
+if ($is_cpt) {
+    // CPT設定を読み込んでラベルを取得
+    $cpt_config = defined('CPT_CONFIG_FILE') && file_exists(CPT_CONFIG_FILE)
+        ? json_decode(file_get_contents(CPT_CONFIG_FILE), true) : [];
+    $cpt_label  = $cpt_config[$post_type]['label'] ?? $post_type;
+
+    $page_title   = $cpt_label . '一覧';
+    $current_page = 'cpt_' . $post_type;
+    $sub_page     = 'list';
+
+    $cpt_index_file = DATA_DIR . "/posts_{$post_type}_index.json";
+    $index_data = file_exists($cpt_index_file) ? json_decode(file_get_contents($cpt_index_file), true) : [];
+} else {
+    $post_type    = 'post';
+    $page_title   = '投稿一覧';
+    $current_page = 'posts';
+    $sub_page     = 'list';
+
+    $index_data = file_exists(INDEX_FILE) ? json_decode(file_get_contents(INDEX_FILE), true) : [];
+}
+
 $all_posts = is_array($index_data) ? $index_data : [];
 
 // ステータスごとの件数をカウント
@@ -135,9 +155,12 @@ require_once __DIR__ . '/includes/sidebar.php';
 ?>
 
 <div class="wp-content-title-area">
-    <h2>投稿</h2>
-    <a href="editor.php" class="button-primary">新規追加</a>
+    <h2><?php echo htmlspecialchars($is_cpt ? $cpt_label : '投稿', ENT_QUOTES, 'UTF-8'); ?></h2>
+    <a href="editor.php<?php echo $is_cpt ? '?type=' . urlencode($post_type) : ''; ?>" class="button-primary">新規追加</a>
     <form method="get" action="edit-posts.php" class="search-form">
+        <?php if ($is_cpt): ?>
+            <input type="hidden" name="type" value="<?= htmlspecialchars($post_type) ?>">
+        <?php endif; ?>
         <?php if ($current_status !== 'all'): ?>
             <input type="hidden" name="post_status" value="<?= htmlspecialchars($current_status) ?>">
         <?php endif; ?>
@@ -146,28 +169,29 @@ require_once __DIR__ . '/includes/sidebar.php';
     </form>
 </div>
 
+<?php $type_qs = $is_cpt ? '&type=' . urlencode($post_type) : ''; ?>
 <ul class="subsubsub">
     <li>
-        <a href="edit-posts.php" class="<?php echo $current_status === 'all' ? 'current' : ''; ?>">
+        <a href="edit-posts.php?<?= $type_qs ?>" class="<?php echo $current_status === 'all' ? 'current' : ''; ?>">
             すべて <span class="count">(<?php echo $counts['all']; ?>)</span>
         </a>
     </li>
     <li>
         <span class="separator">|</span>
-        <a href="edit-posts.php?post_status=public" class="<?php echo $current_status === 'public' ? 'current' : ''; ?>">
+        <a href="edit-posts.php?post_status=public<?= $type_qs ?>" class="<?php echo $current_status === 'public' ? 'current' : ''; ?>">
             公開済み <span class="count">(<?php echo $counts['public']; ?>)</span>
         </a>
     </li>
     <li>
         <span class="separator">|</span>
-        <a href="edit-posts.php?post_status=draft" class="<?php echo $current_status === 'draft' ? 'current' : ''; ?>">
+        <a href="edit-posts.php?post_status=draft<?= $type_qs ?>" class="<?php echo $current_status === 'draft' ? 'current' : ''; ?>">
             下書き <span class="count">(<?php echo $counts['draft']; ?>)</span>
         </a>
     </li>
     <?php if ($counts['trash'] > 0): ?>
     <li>
         <span class="separator">|</span>
-        <a href="edit-posts.php?post_status=trash" class="<?php echo $current_status === 'trash' ? 'current' : ''; ?>" style="<?php echo $current_status === 'trash' ? '' : 'color:#b32d2e;'; ?>">
+        <a href="edit-posts.php?post_status=trash<?= $type_qs ?>" class="<?php echo $current_status === 'trash' ? 'current' : ''; ?>" style="<?php echo $current_status === 'trash' ? '' : 'color:#b32d2e;'; ?>">
             ゴミ箱 <span class="count">(<?php echo $counts['trash']; ?>)</span>
         </a>
     </li>
@@ -281,7 +305,7 @@ require_once __DIR__ . '/includes/sidebar.php';
                     </td>
                     
                     <td class="post-title-block" style="vertical-align: middle;">
-                        <a href="editor.php?id=<?php echo $post['id']; ?>" class="post-title-link">
+                        <a href="editor.php?id=<?php echo $post['id']; ?><?= $is_cpt ? '&type=' . urlencode($post_type) : ''; ?>" class="post-title-link">
                             <?php echo htmlspecialchars($post['title'], ENT_QUOTES, 'UTF-8'); ?>
                         </a>
                         <?php if ($post['status'] === 'draft'): ?>
@@ -292,11 +316,11 @@ require_once __DIR__ . '/includes/sidebar.php';
                         
                         <div class="row-actions">
                             <?php if ($post['status'] === 'trash'): ?>
-                                <button onclick="changeStatus('<?php echo $post['id']; ?>', 'restore')">復元</button> | 
+                                <button onclick="changeStatus('<?php echo $post['id']; ?>','restore')">復元</button> | 
                                 <button onclick="deletePostPermanently('<?php echo $post['id']; ?>')" class="trash-action">完全に削除</button>
                             <?php else: ?>
-                                <a href="editor.php?id=<?php echo $post['id']; ?>">編集</a> | 
-                                <button onclick="changeStatus('<?php echo $post['id']; ?>', 'trash')" class="trash-action">ゴミ箱へ移動</button>
+                                <a href="editor.php?id=<?php echo $post['id']; ?><?= $is_cpt ? '&type=' . urlencode($post_type) : ''; ?>">編集</a> | 
+                                <button onclick="changeStatus('<?php echo $post['id']; ?>','trash')" class="trash-action">ゴミ箱へ移動</button>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -322,6 +346,9 @@ require_once __DIR__ . '/includes/sidebar.php';
 </div>
 
 <script>
+    // 現在の投稿タイプ（CPT対応）
+    const POST_TYPE = '<?php echo htmlspecialchars($post_type, ENT_QUOTES, 'UTF-8'); ?>';
+
     // フィルタードロップダウン変更時にURLへ反映
     function applyFilters() {
         const params = new URLSearchParams(window.location.search);
@@ -329,8 +356,7 @@ require_once __DIR__ . '/includes/sidebar.php';
         params.set('cat',    document.getElementById('filter-cat')?.value    ?? '');
         params.set('tag',    document.getElementById('filter-tag')?.value    ?? '');
         params.set('author', document.getElementById('filter-author')?.value ?? '');
-        params.delete('paged'); // フィルター変更時は1ページ目へ
-        // 空値は削除
+        params.delete('paged');
         for (const [k, v] of [...params.entries()]) { if (!v) params.delete(k); }
         window.location.search = params.toString();
     }
@@ -357,6 +383,7 @@ require_once __DIR__ . '/includes/sidebar.php';
             const formData = new FormData();
             formData.append('action', action);
             formData.append('id', id);
+            formData.append('type', POST_TYPE);
             fetch('api.php', { method: 'POST', body: formData })
             .then(res => res.json())
             .then(data => {
@@ -379,6 +406,7 @@ require_once __DIR__ . '/includes/sidebar.php';
             const formData = new FormData();
             formData.append('action', 'delete_permanently');
             formData.append('id', id);
+            formData.append('type', POST_TYPE);
             fetch('api.php', { method: 'POST', body: formData })
             .then(res => res.json())
             .then(data => {
@@ -420,6 +448,7 @@ require_once __DIR__ . '/includes/sidebar.php';
             const formData = new FormData();
             formData.append('action', 'bulk_' + action);
             formData.append('ids', JSON.stringify(ids));
+            formData.append('type', POST_TYPE);
 
             fetch('api.php', { method: 'POST', body: formData })
             .then(res => res.json())

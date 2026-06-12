@@ -8,9 +8,24 @@ if (!isset($_SESSION['raptio_auth'])) {
     exit;
 }
 
-// モード判定: post（投稿）/ page（単独ページ）
+// モード判定: post（投稿）/ page（単独ページ）/ {cpt_slug}（カスタム投稿タイプ）
 $mode = $_GET['mode'] ?? 'post';
-if ($mode !== 'page') $mode = 'post';
+$cpt_type = $_GET['type'] ?? '';   // CPTスラッグ（例: "news"）
+
+// typeパラメータがあればCPTモード
+if ($cpt_type !== '' && $cpt_type !== 'post' && $cpt_type !== 'page') {
+    $mode = 'cpt';
+} elseif ($mode !== 'page') {
+    $mode = 'post';
+}
+
+// CPT設定の読み込み
+$cpt_label = '';
+if ($mode === 'cpt') {
+    $cpt_config = defined('CPT_CONFIG_FILE') && file_exists(CPT_CONFIG_FILE)
+        ? json_decode(file_get_contents(CPT_CONFIG_FILE), true) : [];
+    $cpt_label  = $cpt_config[$cpt_type]['label'] ?? $cpt_type;
+}
 
 // カテゴリ（投稿モードのみ使用）
 $all_categories = [];
@@ -46,6 +61,22 @@ if ($id) {
                 break;
             }
         }
+    } elseif ($mode === 'cpt') {
+        $cpt_index_file = DATA_DIR . "/posts_{$cpt_type}_index.json";
+        $index_data = json_decode(file_exists($cpt_index_file) ? file_get_contents($cpt_index_file) : '[]', true) ?? [];
+        foreach ($index_data as $post) {
+            if ($post['id'] === $id) {
+                $title     = $post['title'];
+                $slug      = $post['slug'];
+                $status    = $post['status'];
+                $date      = $post['date'];
+                $thumbnail = $post['thumbnail'] ?? '';
+                $fp        = $post['file_path'];
+                if (!file_exists($fp)) $fp = __DIR__ . '/../' . $fp;
+                if (file_exists($fp)) $content = file_get_contents($fp);
+                break;
+            }
+        }
     } else {
         $pages_index = json_decode(file_exists(PAGES_INDEX_FILE) ? file_get_contents(PAGES_INDEX_FILE) : '[]', true) ?? [];
         foreach ($pages_index as $pg) {
@@ -65,7 +96,14 @@ if ($id) {
 }
 
 // ページタイトル・サイドバー変数
-if ($mode === 'post') {
+if ($mode === 'cpt') {
+    $page_title   = $id ? $cpt_label . 'の編集' : '新規' . $cpt_label . 'を追加';
+    $current_page = 'cpt_' . $cpt_type;
+    $sub_page     = 'add';
+    $save_action  = 'save_post';
+    $list_page    = 'edit-posts.php?type=' . urlencode($cpt_type);
+    $h2_label     = $page_title;
+} elseif ($mode === 'post') {
     $page_title   = $id ? '投稿の編集' : '新規投稿を追加';
     $current_page = 'posts';
     $sub_page     = 'add';
@@ -91,6 +129,9 @@ require_once __DIR__ . '/includes/sidebar.php';
 <form id="editorForm">
     <input type="hidden" name="action" value="<?php echo $save_action; ?>">
     <input type="hidden" name="id"     value="<?php echo htmlspecialchars($id, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php if ($mode === 'cpt'): ?>
+        <input type="hidden" name="type" value="<?php echo htmlspecialchars($cpt_type, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php endif; ?>
     <?php if ($date): ?>
         <input type="hidden" name="date" value="<?php echo htmlspecialchars($date, ENT_QUOTES, 'UTF-8'); ?>">
     <?php endif; ?>
@@ -224,7 +265,9 @@ require_once __DIR__ . '/includes/sidebar.php';
                     <?php endif; ?>
                     <div class="form-group">
                         <label for="slug">スラッグ</label>
-                        <input type="text" id="slug" name="slug" value="<?php echo htmlspecialchars($slug, ENT_QUOTES, 'UTF-8'); ?>" placeholder="<?php echo $mode === 'post' ? 'post-slug' : 'page-slug'; ?>">
+                        <input type="text" id="slug" name="slug"
+                               value="<?php echo htmlspecialchars($slug, ENT_QUOTES, 'UTF-8'); ?>"
+                               placeholder="<?php echo $mode === 'page' ? 'page-slug' : 'post-slug'; ?>">
                     </div>
                 </div>
             </div>
@@ -904,6 +947,46 @@ document.getElementById('richtextArea').addEventListener('keydown', function(e) 
         }
     }
 });
+
+// ============================================================
+// スラッグ自動生成（新規投稿のみ・タイトル入力時）
+// ============================================================
+(function() {
+    const isNew = <?php echo $id ? 'false' : 'true'; ?>;
+    if (!isNew) return; // 編集時は自動生成しない
+
+    const slugInput = document.getElementById('slug');
+    let slugManuallyEdited = false;
+
+    // スラッグ欄を手動編集したらフラグを立てる
+    slugInput.addEventListener('input', function() {
+        slugManuallyEdited = this.value.trim() !== '';
+    });
+
+    // 今日の日付を YYYYMMDD 形式で返す
+    function getTodayPrefix() {
+        const d = new Date();
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return y + m + day;
+    }
+
+    // タイトル入力時: スラッグが空か日付デフォルトのままなら更新
+    document.querySelector('input[name="title"]').addEventListener('input', function() {
+        if (slugManuallyEdited) return;
+        if (!slugInput.value.trim()) {
+            slugInput.value = getTodayPrefix();
+        }
+    });
+
+    // ページ初期表示時にスラッグが空なら日付をセット
+    if (!slugInput.value.trim()) {
+        slugInput.value = getTodayPrefix();
+        // 日付デフォルト値は「手動編集」とみなさない
+        slugManuallyEdited = false;
+    }
+})();
 
 // ============================================================
 // フォーム送信

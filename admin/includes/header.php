@@ -27,7 +27,20 @@ if (!defined('DATA_DIR')) {
 <div class="wp-admin-wrapper">
     <div class="wp-admin-header-bar">
         <div class="brand-area">
-            <img src="<?php echo $_admin_url; ?>/img/logo1.png" alt="Raptio" class="admin-logo">
+            <a href="https://raptio.site" target="_blank">
+                <img src="<?php echo $_admin_url; ?>/img/logo1.png" alt="Raptio" class="admin-logo">
+            </a>
+            
+            <div class="header-actions">
+                <div class="header-dropdown">
+                    <button class="dropdown-toggle">新規作成</button>
+                    <ul class="dropdown-menu">
+                        <li><a href="<?php echo $_admin_url; ?>/editor.php">新規投稿</a></li>
+                        <li><a href="<?php echo $_admin_url; ?>/editor.php?mode=page">固定ページ追加</a></li>
+                    </ul>
+                </div>
+                <a href="<?php echo $_admin_url; ?>/../" target="_blank" class="site-preview-btn">サイト確認</a>
+            </div>
         </div>
         <div class="user-info">こんにちは、管理者 さん</div>
     </div>
