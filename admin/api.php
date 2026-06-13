@@ -16,6 +16,7 @@ error_reporting(0);
 ini_set('display_errors', 0);
 
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/auth.php';
 session_start();
 
 // 出力バッファリング
@@ -41,16 +42,23 @@ function get_post_paths($type = 'post') {
     }
 }
 
+// 認証情報をsite_config.jsonから取得
+$_site_config_auth = file_exists(CONFIG_FILE) ? json_decode(file_get_contents(CONFIG_FILE), true) : [];
+$_admin_user = $_site_config_auth['username'] ?? '';
+$_admin_pass = $_site_config_auth['password'] ?? '';
+
 // 認証チェック
 if (!isset($_SESSION['raptio_auth'])) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'login') {
         $username = $_POST['username'] ?? '';
         $password = $_POST['password'] ?? '';
-        if ($username === ADMIN_USER && password_verify($password, ADMIN_PASS)) {
+        if ($username === $_admin_user && password_verify($password, $_admin_pass)) {
             $_SESSION['raptio_auth'] = true;
-            json_response(['success' => true]);
+            header('Location: index.php');
+            exit;
         } else {
-            json_response(['success' => false, 'message' => 'ユーザー名またはパスワードが違います。']);
+            header('Location: index.php?error=1');
+            exit;
         }
     }
     json_response(['success' => false, 'message' => 'Unauthorized'], 401);

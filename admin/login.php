@@ -69,7 +69,7 @@
         </div>
         
         <div class="login-card">
-            <?php if (isset($_GET['error'])): ?>
+            <?php if (isset($_GET['error']) && $_GET['error'] === '1'): ?>
                 <div class="error-message">
                     ユーザー名またはパスワードが正しくありません。
                 </div>
