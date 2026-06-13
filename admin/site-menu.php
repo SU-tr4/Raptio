@@ -9,26 +9,42 @@ $locations   = $config_data['menu_locations'] ?? [];
 
 // メニュー項目追加パネル用データ取得
 $categories  = file_exists(CATEGORY_FILE)    ? json_decode(file_get_contents(CATEGORY_FILE),    true) : [];
-$posts_index = file_exists(INDEX_FILE)       ? json_decode(file_get_contents(INDEX_FILE),        true) : [];
-$pages_index = file_exists(PAGES_INDEX_FILE) ? json_decode(file_get_contents(PAGES_INDEX_FILE),  true) : [];
 $cpt_config  = file_exists(CPT_CONFIG_FILE)  ? json_decode(file_get_contents(CPT_CONFIG_FILE),   true) : [];
 
-// カスタム投稿インデックスを収集
-$cpt_posts = [];
-foreach ($cpt_config as $cpt_slug => $cpt_info) {
-    $cpt_index_file = DATA_DIR . "/posts_{$cpt_slug}_index.json";
-    if (file_exists($cpt_index_file)) {
-        $cpt_items = json_decode(file_get_contents($cpt_index_file), true) ?? [];
-        foreach ($cpt_items as $item) {
-            if (($item['status'] ?? '') === 'publish') {
-                $cpt_posts[] = array_merge($item, ['_cpt_label' => $cpt_info['label'] ?? $cpt_slug]);
-            }
+// 投稿・単独ページ・カスタム投稿のデータをインデックスJSONから収集
+$data_dir      = defined('DATA_DIR') ? DATA_DIR : realpath(__DIR__ . '/../data');
+$index_file    = defined('INDEX_FILE')       ? INDEX_FILE       : $data_dir . '/posts_index.json';
+$pages_index   = defined('PAGES_INDEX_FILE') ? PAGES_INDEX_FILE : $data_dir . '/pages_index.json';
+
+// 通常投稿 (posts_index.json)
+$posts_raw     = file_exists($index_file)  ? json_decode(file_get_contents($index_file),  true) : [];
+$published_posts = array_filter(
+    is_array($posts_raw) ? $posts_raw : [],
+    fn($p) => ($p['status'] ?? '') === 'public'
+);
+
+// 単独ページ (pages_index.json)
+$pages_raw     = file_exists($pages_index) ? json_decode(file_get_contents($pages_index), true) : [];
+$published_pages = array_filter(
+    is_array($pages_raw) ? $pages_raw : [],
+    fn($p) => ($p['status'] ?? '') === 'public'
+);
+
+// カスタム投稿タイプ: cpt_config.json のキー一覧から posts_{type}_index.json を読む
+$cpt_posts_all = [];
+if (is_array($cpt_config)) {
+    foreach (array_keys($cpt_config) as $cpt_type) {
+        $cpt_index = $data_dir . "/posts_{$cpt_type}_index.json";
+        if (!file_exists($cpt_index)) continue;
+        $cpt_raw = json_decode(file_get_contents($cpt_index), true);
+        if (!is_array($cpt_raw)) continue;
+        foreach ($cpt_raw as $item) {
+            if (($item['status'] ?? '') !== 'public') continue;
+            $cpt_label = $cpt_config[$cpt_type]['label'] ?? $cpt_type;
+            $cpt_posts_all[] = array_merge($item, ['_cpt_label' => $cpt_label, 'type' => $cpt_type]);
         }
     }
 }
-
-$published_posts = array_filter($posts_index, fn($p) => ($p['status'] ?? '') === 'publish');
-$published_pages = array_filter($pages_index, fn($p) => ($p['status'] ?? '') === 'publish');
 
 $positions = [
     'header'            => 'ヘッダーメニュー',
@@ -157,10 +173,8 @@ require_once __DIR__ . '/includes/sidebar.php';
 
 <div class="menu-manager-layout">
 
-    <!-- ════ 左パネル ════ -->
     <div class="menu-list-panel">
 
-        <!-- メニューセット一覧 -->
         <div class="menu-add-box">
             <div class="menu-add-box-title collapsed" onclick="toggleBox(this)">
                 メニューセット <span class="toggle-arrow">▼</span>
@@ -184,7 +198,6 @@ require_once __DIR__ . '/includes/sidebar.php';
 
         <?php if ($current_gid): ?>
 
-        <!-- 投稿を追加 -->
         <div class="menu-add-box">
             <div class="menu-add-box-title collapsed" onclick="toggleBox(this)">
                 投稿 <span class="toggle-arrow">▼</span>
@@ -194,30 +207,32 @@ require_once __DIR__ . '/includes/sidebar.php';
                     <button type="button" class="add-tab active" onclick="switchTab(this,'tab-post-recent')">最近</button>
                     <button type="button" class="add-tab" onclick="switchTab(this,'tab-post-all')">すべて</button>
                 </div>
-                <!-- 最近 -->
                 <div id="tab-post-recent" class="add-tab-pane active">
                     <div class="add-checklist" id="checklist-post-recent">
                         <?php
                         $recent = array_slice(array_reverse(array_values($published_posts)), 0, 10);
-                        if ($recent): foreach ($recent as $p): ?>
+                        if ($recent): ?>
+                        <?php foreach ($recent as $p): ?>
                         <label>
                             <input type="checkbox" class="add-check" data-label="<?php echo htmlspecialchars($p['title']); ?>" data-url="<?php echo htmlspecialchars('?slug='.$p['slug']); ?>">
                             <?php echo htmlspecialchars($p['title']); ?>
                         </label>
-                        <?php endforeach; else: ?>
+                        <?php endforeach; ?>
+                        <?php else: ?>
                         <div class="add-checklist-empty">公開中の投稿がありません</div>
                         <?php endif; ?>
                     </div>
                 </div>
-                <!-- すべて -->
                 <div id="tab-post-all" class="add-tab-pane">
                     <div class="add-checklist" id="checklist-post-all">
-                        <?php if ($published_posts): foreach ($published_posts as $p): ?>
+                        <?php if ($published_posts): ?>
+                        <?php foreach ($published_posts as $p): ?>
                         <label>
                             <input type="checkbox" class="add-check" data-label="<?php echo htmlspecialchars($p['title']); ?>" data-url="<?php echo htmlspecialchars('?slug='.$p['slug']); ?>">
                             <?php echo htmlspecialchars($p['title']); ?>
                         </label>
-                        <?php endforeach; else: ?>
+                        <?php endforeach; ?>
+                        <?php else: ?>
                         <div class="add-checklist-empty">公開中の投稿がありません</div>
                         <?php endif; ?>
                     </div>
@@ -226,39 +241,41 @@ require_once __DIR__ . '/includes/sidebar.php';
             </div>
         </div>
 
-        <!-- 固定ページを追加 -->
         <div class="menu-add-box">
             <div class="menu-add-box-title collapsed" onclick="toggleBox(this)">
-                固定ページ <span class="toggle-arrow">▼</span>
+                単独 <span class="toggle-arrow">▼</span>
             </div>
             <div class="menu-add-box-body hidden">
                 <div class="add-checklist" id="checklist-pages">
-                    <?php if ($published_pages): foreach ($published_pages as $p): ?>
+                    <?php if ($published_pages): ?>
+                    <?php foreach ($published_pages as $p): ?>
                     <label>
-                        <input type="checkbox" class="add-check" data-label="<?php echo htmlspecialchars($p['title']); ?>" data-url="<?php echo htmlspecialchars('?page='.$p['slug']); ?>">
+                        <input type="checkbox" class="add-check" data-label="<?php echo htmlspecialchars($p['title']); ?>" data-url="<?php echo htmlspecialchars('?slug='.$p['slug']); ?>">
                         <?php echo htmlspecialchars($p['title']); ?>
                     </label>
-                    <?php endforeach; else: ?>
-                    <div class="add-checklist-empty">公開中のページがありません</div>
+                    <?php endforeach; ?>
+                    <?php else: ?>
+                    <div class="add-checklist-empty">公開中の単独ページがありません</div>
                     <?php endif; ?>
                 </div>
                 <button type="button" class="btn-add-to-menu" onclick="addCheckedItems('checklist-pages')">メニューに追加</button>
             </div>
         </div>
 
-        <!-- カテゴリーを追加 -->
         <div class="menu-add-box">
             <div class="menu-add-box-title collapsed" onclick="toggleBox(this)">
                 カテゴリー <span class="toggle-arrow">▼</span>
             </div>
             <div class="menu-add-box-body hidden">
                 <div class="add-checklist" id="checklist-cats">
-                    <?php if ($categories): foreach ($categories as $cat): ?>
+                    <?php if ($categories): ?>
+                    <?php foreach ($categories as $cat): ?>
                     <label>
                         <input type="checkbox" class="add-check" data-label="<?php echo htmlspecialchars($cat['name']); ?>" data-url="<?php echo htmlspecialchars('?category='.$cat['slug']); ?>">
                         <?php echo htmlspecialchars($cat['name']); ?>
                     </label>
-                    <?php endforeach; else: ?>
+                    <?php endforeach; ?>
+                    <?php else: ?>
                     <div class="add-checklist-empty">カテゴリーがありません</div>
                     <?php endif; ?>
                 </div>
@@ -266,30 +283,30 @@ require_once __DIR__ . '/includes/sidebar.php';
             </div>
         </div>
 
-        <?php if ($cpt_posts): ?>
-        <!-- カスタム投稿を追加 -->
         <div class="menu-add-box">
             <div class="menu-add-box-title collapsed" onclick="toggleBox(this)">
                 カスタム投稿 <span class="toggle-arrow">▼</span>
             </div>
             <div class="menu-add-box-body hidden">
                 <div class="add-checklist" id="checklist-cpt">
-                    <?php foreach ($cpt_posts as $p): ?>
+                    <?php if ($cpt_posts_all): ?>
+                    <?php foreach ($cpt_posts_all as $p): ?>
                     <label>
                         <input type="checkbox" class="add-check"
                                data-label="<?php echo htmlspecialchars($p['title']); ?>"
-                               data-url="<?php echo htmlspecialchars('?slug='.$p['slug'].'&type='.$p['type']); ?>">
+                               data-url="<?php echo htmlspecialchars('?slug='.$p['slug']); ?>">
                         <span style="color:#888;font-size:11px;">[<?php echo htmlspecialchars($p['_cpt_label']); ?>]</span>
                         <?php echo htmlspecialchars($p['title']); ?>
                     </label>
                     <?php endforeach; ?>
+                    <?php else: ?>
+                    <div class="add-checklist-empty">公開中のカスタム投稿がありません</div>
+                    <?php endif; ?>
                 </div>
                 <button type="button" class="btn-add-to-menu" onclick="addCheckedItems('checklist-cpt')">メニューに追加</button>
             </div>
         </div>
-        <?php endif; ?>
 
-        <!-- カスタムリンク -->
         <div class="menu-add-box">
             <div class="menu-add-box-title collapsed" onclick="toggleBox(this)">
                 カスタムリンク <span class="toggle-arrow">▼</span>
@@ -307,10 +324,7 @@ require_once __DIR__ . '/includes/sidebar.php';
 
         <?php endif; // current_gid ?>
 
-    </div><!-- /左パネル -->
-
-    <!-- ════ 右パネル：メニュー編集 ════ -->
-    <div class="menu-edit-panel">
+    </div><div class="menu-edit-panel">
         <form id="menuForm">
             <input type="hidden" name="action" value="save_menus">
             <input type="hidden" name="active_gid" value="<?php echo htmlspecialchars($current_gid); ?>">
@@ -360,9 +374,7 @@ require_once __DIR__ . '/includes/sidebar.php';
         </form>
     </div>
 
-</div><!-- /menu-manager-layout -->
-
-<script>
+</div><script>
 const GID = <?php echo json_encode($current_gid); ?>;
 
 /* ── アコーディオン ── */

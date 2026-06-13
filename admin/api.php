@@ -514,6 +514,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_settings') {
     $config_data['site_description'] = $_POST['site_description'] ?? '';
     $config_data['footer_text'] = $_POST['footer_text'] ?? '';
     $config_data['enable_custom_post'] = isset($_POST['enable_custom_post']) ? true : false;
+    $config_data['permalink_structure'] = $_POST['permalink_structure'] ?? '/%postname%/';
 
     $upload_dir = dirname(DATA_DIR) . '/uploads';
     if (!is_dir($upload_dir)) @mkdir($upload_dir, 0755, true);
