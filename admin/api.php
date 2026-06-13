@@ -554,7 +554,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'save_cpt_settings') {
     if (!is_array($cpt_data)) $cpt_data = [];
 
     $cpt_data_before = $cpt_data; // 新規登録判定用に書き込み前の状態を保持
-    $cpt_data[$slug] = ['label' => $label];
+    $cpt_data[$slug] = ['label' => $label, 'slug' => $slug];
     file_put_contents(CPT_CONFIG_FILE, json_encode($cpt_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
     // 新規登録の場合のみ投稿ディレクトリを作成
