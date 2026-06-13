@@ -6,7 +6,7 @@ if (!defined('DATA_DIR')) {
 ?>
     <div class="wp-admin-footer">
         <p>Raptio へのご協力に感謝いたします。</p>
-        <p>バージョン 1.8.9</p>
+        <p>バージョン 1.8.10</p>
     </div>
 
 </div></div></div>

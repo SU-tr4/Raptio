@@ -59,7 +59,7 @@ $cpt_data = file_exists($cpt_file) ? json_decode(file_get_contents($cpt_file), t
                         <td><?php echo htmlspecialchars($cpt['label'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
                         <td>
                             <code><?php echo htmlspecialchars($slug, ENT_QUOTES, 'UTF-8'); ?></code><br>
-                            <?php $front_url = '../index.php?cpt=' . urlencode($slug); ?>
+                            <?php $front_url = '../archive.php?cpt=' . urlencode($slug); ?>
                             <a href="<?php echo htmlspecialchars($front_url, ENT_QUOTES, 'UTF-8'); ?>" target="_blank"
                                style="font-size:12px; color:#2271b1;">
                                 フロントの一覧を確認 (?cpt=<?php echo htmlspecialchars($slug, ENT_QUOTES, 'UTF-8'); ?>) →
