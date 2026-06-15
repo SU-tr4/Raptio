@@ -10,6 +10,38 @@ define('CONFIG_FILE',      __DIR__ . '/data/site_config.json');
 define('CATEGORIES_FILE',  __DIR__ . '/data/categories.json');
 define('INCLUDES_DIR',     __DIR__ . '/includes');
 define('SITE_ROOT',        __DIR__);
+define('PLUGINS_DIR',      __DIR__ . '/plugins');
+define('PLUGINS_JSON',     __DIR__ . '/data/plugins.json');
+define('RAPTIO_DATA_DIR',  __DIR__ . '/data');
+
+// フックシステム読み込み
+require_once __DIR__ . '/admin/includes/plugin-api.php';
+
+// 有効プラグインを読み込み（フック登録のため）
+if (file_exists(PLUGINS_JSON)) {
+    $active_plugins_raw = json_decode(file_get_contents(PLUGINS_JSON), true);
+    if (is_array($active_plugins_raw)) {
+        foreach ($active_plugins_raw as $key => $val) {
+            $folder_name = '';
+            $is_active   = false;
+            if (is_array($val) && array_key_exists('active', $val)) {
+                $folder_name = $key;
+                $is_active   = (bool)$val['active'];
+            } else {
+                $folder_name = $val;
+                $is_active   = true;
+            }
+            if ($is_active) {
+                $safe_folder = basename($folder_name);
+                $plugin_file = PLUGINS_DIR . '/' . $safe_folder . '/' . $safe_folder . '.php';
+                if (file_exists($plugin_file)) {
+                    require_once $plugin_file;
+                }
+            }
+        }
+    }
+}
+unset($active_plugins_raw, $key, $val, $folder_name, $is_active, $safe_folder, $plugin_file);
 
 require_once INCLUDES_DIR . '/widget-manager.php';
 
@@ -203,6 +235,9 @@ if ($post_meta) {
         } else {
             $content = nl2br(htmlspecialchars($markdown_raw, ENT_QUOTES, 'UTF-8'));
         }
+
+        // the_content フィルター実行（ショートコード展開など）
+        $content = RaptioHook::apply('the_content', $content);
     }
 
     $theme_single = THEME_DIR . '/single.php';

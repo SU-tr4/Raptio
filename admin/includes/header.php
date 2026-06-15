@@ -42,7 +42,16 @@ if (!defined('DATA_DIR')) {
                 <a href="<?php echo $_admin_url; ?>/../" target="_blank" class="site-preview-btn">サイト確認</a>
             </div>
         </div>
-        <div class="user-info">こんにちは、管理者 さん</div>
+        <div class="user-info">
+            <div class="header-dropdown">
+                <button class="dropdown-toggle">こんにちは、管理者 さん</button>
+                <ul class="dropdown-menu" style="right: 0; left: auto;">
+                    <li><a href="<?php echo $_admin_url; ?>/site-settings.php">サイト情報</a></li>
+                    <li><a href="<?php echo $_admin_url; ?>/../" target="_blank">サイト確認</a></li>
+                    <li><a href="<?php echo $_admin_url; ?>/index.php?action=logout">ログアウト</a></li>
+                </ul>
+            </div>
+        </div>
     </div>
     
     <div class="wp-admin-body-container">

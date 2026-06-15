@@ -82,8 +82,6 @@ if ($is_cpt_enabled && defined('CPT_CONFIG_FILE') && file_exists(CPT_CONFIG_FILE
         RaptioHook::do('admin_sidebar_menu');
         echo ob_get_clean();
         ?>
-        <li><a href="<?php echo $_admin_url; ?>/../" target="_blank" style="color: #72aee6;">サイト確認 ↗</a></li>
-        <li><a href="<?php echo $_admin_url; ?>/index.php?action=logout" style="color: #f39c12;">ログアウト</a></li>
     </ul>
 </div>
 <div class="wp-main-content">
